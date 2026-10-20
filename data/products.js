@@ -1,0 +1,305 @@
+// Sample catalogue for the StarPick UK prototype.
+// All products, prices and reviews are made up for demo purposes.
+// To add a product: copy one object below, give it a unique `id`, and fill the fields.
+
+export const CATEGORIES = [
+  { id: 'lighting',    name: 'Lighting',    icon: 'lamp',  colors: ['#ffb347', '#ff7a59'] },
+  { id: 'storage',     name: 'Storage',     icon: 'box',   colors: ['#6dd5c4', '#2f9e8f'] },
+  { id: 'kitchen',     name: 'Kitchen',     icon: 'pot',   colors: ['#ff8a8a', '#e0475b'] },
+  { id: 'bedding',     name: 'Bedding',     icon: 'bed',   colors: ['#a18cff', '#6a5af9'] },
+  { id: 'bathroom',    name: 'Bathroom',    icon: 'drop',  colors: ['#6ec6ff', '#2f80ed'] },
+  { id: 'electricals', name: 'Electricals', icon: 'plug',  colors: ['#9be15d', '#3fae54'] },
+];
+
+// warehouse: 'UK' = ships from UK warehouse (2–4 days); 'CN' = direct from China (7–14 days)
+// plug: 'UK' | 'EU' | 'USB' | 'None'
+// safety: list of marks shown on the product (UKCA, CE, BS 1363 …)
+// dims: [width, depth, height] in cm (null if not relevant)
+// aspects: % of reviewers who agree (used for review summary + PK)
+export const PRODUCTS = [
+  // ---------- Lighting ----------
+  {
+    id: 'l1', category: 'lighting', name: 'Lumi Bedside Touch Lamp',
+    seller: 'Lumi Home Official', price: 14.99, was: 24.99, rating: 4.7, reviews: 1284, sold: 9200,
+    warehouse: 'UK', plug: 'UK', voltage: '230V', power: '5W LED', safety: ['UKCA', 'CE'],
+    dims: [12, 12, 28], weight: '0.6 kg', material: 'ABS base, linen shade',
+    colors: ['Oat', 'Charcoal', 'Sage'],
+    tags: ['bedside lamp', 'touch lamp', 'dimmable', 'warm light', 'guest room'],
+    returns: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 94, photo: 91, quality: 88 },
+    desc: '3-level touch dimming with a warm 2700K glow. Comes with a UK 3-pin plug, no adapter needed.',
+    featured: true,
+  },
+  {
+    id: 'l2', category: 'lighting', name: 'Arc Minimal Desk Lamp',
+    seller: 'Arc Lighting Store', price: 11.49, was: 19.99, rating: 4.3, reviews: 642, sold: 4100,
+    warehouse: 'CN', plug: 'EU', voltage: '220–240V', power: '8W LED', safety: ['CE'],
+    dims: [15, 15, 42], weight: '0.9 kg', material: 'Aluminium',
+    colors: ['Black', 'White'],
+    tags: ['desk lamp', 'reading lamp', 'study', 'adjustable'],
+    returns: { free: false, days: 15, method: 'Return to seller warehouse, £3.99 label' },
+    aspects: { size: 86, photo: 79, quality: 81 },
+    desc: 'Adjustable arm with 5 colour temperatures. Ships with a European 2-pin plug.',
+  },
+  {
+    id: 'l3', category: 'lighting', name: 'Glow LED Strip Lights 5m',
+    seller: 'Brightway', price: 9.49, was: 15.99, rating: 4.4, reviews: 2210, sold: 15800,
+    warehouse: 'CN', plug: 'USB', voltage: '5V USB', power: '6W', safety: ['CE'],
+    dims: [500, 1, 0.2], weight: '0.2 kg', material: 'Silicone-coated LED',
+    colors: ['RGB'],
+    tags: ['led strip', 'fairy lights', 'mood lighting', 'bedroom', 'rgb', 'christmas'],
+    returns: { free: true, days: 15, method: 'Refund only — keep the item (under £10)' },
+    aspects: { size: 92, photo: 84, quality: 80 },
+    desc: 'App and remote control, music sync. Powered by any USB port or USB plug.',
+  },
+  {
+    id: 'l4', category: 'lighting', name: 'Nordic Arc Floor Lamp',
+    seller: 'Lumi Home Official', price: 34.99, was: 49.99, rating: 4.6, reviews: 418, sold: 1900,
+    warehouse: 'UK', plug: 'UK', voltage: '230V', power: 'E27, bulb included', safety: ['UKCA', 'CE'],
+    dims: [35, 35, 150], weight: '3.1 kg', material: 'Steel, fabric shade',
+    colors: ['Black', 'Brass'],
+    tags: ['floor lamp', 'living room', 'reading', 'standing lamp'],
+    returns: { free: true, days: 30, method: 'Free courier collection' },
+    aspects: { size: 93, photo: 90, quality: 89 },
+    desc: 'Tall arched floor lamp with foot switch. Bulb included, UK plug.',
+  },
+
+  // ---------- Storage ----------
+  {
+    id: 's1', category: 'storage', name: 'Under-Bed Storage Bags (2-pack)',
+    seller: 'TidyNest', price: 12.99, was: 19.99, rating: 4.6, reviews: 3120, sold: 22000,
+    warehouse: 'UK', plug: 'None', safety: [], dims: [100, 50, 15], weight: '1.1 kg',
+    material: 'Non-woven fabric, clear window', colors: ['Grey', 'Beige'],
+    tags: ['under bed storage', 'storage bag', 'duvet storage', 'clothes storage', 'guest room'],
+    returns: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 95, photo: 92, quality: 87 },
+    desc: 'Fits most beds with 16 cm clearance or more. Reinforced handles, zip lid.',
+    featured: true,
+  },
+  {
+    id: 's2', category: 'storage', name: 'Slim Under-Bed Box with Wheels',
+    seller: 'HomeCube', price: 16.49, was: 22.99, rating: 4.2, reviews: 805, sold: 5300,
+    warehouse: 'CN', plug: 'None', safety: [], dims: [80, 45, 18], weight: '1.6 kg',
+    material: 'PP plastic', colors: ['Clear'],
+    tags: ['under bed storage', 'storage box', 'wheels', 'plastic box'],
+    returns: { free: false, days: 15, method: 'Return to seller warehouse, £3.99 label' },
+    aspects: { size: 78, photo: 83, quality: 80 },
+    desc: 'Rolling under-bed box with lid. Needs at least 19 cm under your bed.',
+  },
+  {
+    id: 's3', category: 'storage', name: 'Foldable Fabric Cubes (6-pack)',
+    seller: 'TidyNest', price: 15.99, was: 21.99, rating: 4.7, reviews: 1980, sold: 12500,
+    warehouse: 'UK', plug: 'None', safety: [], dims: [30, 30, 30], weight: '1.4 kg',
+    material: 'Fabric, cardboard base', colors: ['Grey', 'Navy', 'Cream'],
+    tags: ['storage cubes', 'storage box', 'shelf box', 'kallax', 'toy storage'],
+    returns: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 96, photo: 93, quality: 86 },
+    desc: '30 cm cubes that fit standard cube shelving units.',
+  },
+  {
+    id: 's4', category: 'storage', name: 'Over-Door Hanging Organiser',
+    seller: 'HomeCube', price: 7.99, was: 12.99, rating: 4.3, reviews: 960, sold: 7400,
+    warehouse: 'CN', plug: 'None', safety: [], dims: [36, 8, 150], weight: '0.5 kg',
+    material: 'Oxford fabric, metal hooks', colors: ['Grey'],
+    tags: ['door organiser', 'hanging storage', 'shoe organiser', 'small space'],
+    returns: { free: true, days: 15, method: 'Refund only — keep the item (under £10)' },
+    aspects: { size: 88, photo: 85, quality: 79 },
+    desc: '24 pockets. Hooks fit doors up to 4.5 cm thick.',
+  },
+  {
+    id: 's5', category: 'storage', name: '5-Tier Corner Shelf',
+    seller: 'Oakline', price: 24.99, was: 39.99, rating: 4.4, reviews: 512, sold: 2600,
+    warehouse: 'CN', plug: 'None', safety: [], dims: [40, 40, 150], weight: '6.2 kg',
+    material: 'Engineered wood, steel frame', colors: ['Rustic Oak', 'White'],
+    tags: ['corner shelf', 'bookshelf', 'shelving unit', 'small space'],
+    returns: { free: false, days: 15, method: 'Return to seller warehouse, £6.99 label' },
+    aspects: { size: 85, photo: 82, quality: 83 },
+    desc: 'Tool-free assembly in about 20 minutes. Max 10 kg per shelf.',
+  },
+
+  // ---------- Kitchen ----------
+  {
+    id: 'k1', category: 'kitchen', name: 'Rapid Boil 1.7L Electric Kettle',
+    seller: 'Kitchenly UK', price: 18.99, was: 29.99, rating: 4.7, reviews: 2470, sold: 16100,
+    warehouse: 'UK', plug: 'UK', voltage: '230V', power: '3000W', safety: ['UKCA', 'BS 1363 plug'],
+    dims: [22, 15, 25], weight: '1.1 kg', material: 'Stainless steel',
+    colors: ['Silver', 'Matte Black'],
+    tags: ['kettle', 'electric kettle', 'fast boil', 'tea'],
+    returns: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 95, photo: 93, quality: 90 },
+    desc: '3 kW fast boil for UK sockets. Boil-dry protection, limescale filter.',
+    featured: true,
+  },
+  {
+    id: 'k2', category: 'kitchen', name: 'Glass Kettle with Blue LED 1.8L',
+    seller: 'Brightway', price: 13.49, was: 21.99, rating: 4.1, reviews: 734, sold: 3900,
+    warehouse: 'CN', plug: 'EU', voltage: '220–240V', power: '2200W', safety: ['CE'],
+    dims: [23, 16, 26], weight: '1.3 kg', material: 'Borosilicate glass',
+    colors: ['Clear'],
+    tags: ['kettle', 'glass kettle', 'electric kettle', 'tea'],
+    returns: { free: false, days: 15, method: 'Return to seller warehouse, £4.99 label' },
+    aspects: { size: 90, photo: 76, quality: 74 },
+    desc: 'Blue LED while boiling. Ships with a European plug.',
+  },
+  {
+    id: 'k3', category: 'kitchen', name: 'Non-stick Frying Pan Set (3 pcs)',
+    seller: 'Kitchenly UK', price: 29.99, was: 44.99, rating: 4.6, reviews: 1105, sold: 6800,
+    warehouse: 'UK', plug: 'None', safety: ['PFOA-free'], dims: [28, 28, 5], weight: '2.4 kg',
+    material: 'Aluminium, granite coating', colors: ['Granite Grey'],
+    tags: ['frying pan', 'pan set', 'non stick', 'induction', 'cookware'],
+    returns: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 92, photo: 90, quality: 87 },
+    desc: '20/24/28 cm pans. Works on gas, electric and induction hobs.',
+  },
+  {
+    id: 'k4', category: 'kitchen', name: 'Airtight Food Containers (10-pack)',
+    seller: 'FreshKeep', price: 13.99, was: 19.99, rating: 4.5, reviews: 1640, sold: 10400,
+    warehouse: 'CN', plug: 'None', safety: ['BPA-free', 'Food-safe'], dims: [20, 14, 10], weight: '1.5 kg',
+    material: 'BPA-free plastic, silicone seal', colors: ['Clear'],
+    tags: ['food containers', 'storage jars', 'meal prep', 'pantry', 'tupperware'],
+    returns: { free: true, days: 15, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 89, photo: 88, quality: 84 },
+    desc: 'Stackable, dishwasher-safe, with labels and a marker pen.',
+  },
+  {
+    id: 'k5', category: 'kitchen', name: 'Magnetic Knife Strip 40 cm',
+    seller: 'Oakline', price: 8.99, was: 13.99, rating: 4.4, reviews: 388, sold: 2100,
+    warehouse: 'CN', plug: 'None', safety: [], dims: [40, 2, 5], weight: '0.4 kg',
+    material: 'Acacia wood', colors: ['Acacia'],
+    tags: ['knife holder', 'magnetic strip', 'kitchen organiser'],
+    returns: { free: true, days: 15, method: 'Refund only — keep the item (under £10)' },
+    aspects: { size: 91, photo: 87, quality: 85 },
+    desc: 'Strong magnets, screws included. Holds 6–8 knives.',
+  },
+
+  // ---------- Bedding ----------
+  {
+    id: 'b1', category: 'bedding', name: 'Microfibre Duvet 10.5 Tog — Double',
+    seller: 'SleepWell UK', price: 21.99, was: 34.99, rating: 4.6, reviews: 2890, sold: 18300,
+    warehouse: 'UK', plug: 'None', safety: ['OEKO-TEX'], dims: [200, 200, 3], weight: '1.9 kg',
+    material: 'Microfibre, hollowfibre fill', colors: ['White'],
+    tags: ['duvet', 'quilt', 'double duvet', 'winter', 'guest room', 'comforter'],
+    returns: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 96, photo: 92, quality: 88 },
+    desc: 'UK double size (200 × 200 cm). All-season warmth, machine washable.',
+    featured: true,
+  },
+  {
+    id: 'b2', category: 'bedding', name: 'Cotton Bedding Set — King',
+    seller: 'Dreamy Textiles', price: 19.99, was: 32.99, rating: 4.0, reviews: 690, sold: 3500,
+    warehouse: 'CN', plug: 'None', safety: [], dims: [230, 220, 1], weight: '1.4 kg',
+    material: '100% cotton, 200 thread count', colors: ['White', 'Sage', 'Blush'],
+    tags: ['bedding set', 'duvet cover', 'king', 'pillowcases', 'bed linen'],
+    returns: { free: false, days: 15, method: 'Return to seller warehouse, £3.99 label' },
+    aspects: { size: 68, photo: 80, quality: 79 },
+    desc: 'Duvet cover 230 × 220 cm (US king). Larger than UK king (225 × 220 cm).',
+    sizeNote: 'Sized to US king, not UK king.',
+  },
+  {
+    id: 'b3', category: 'bedding', name: 'Memory Foam Pillows (2-pack)',
+    seller: 'SleepWell UK', price: 17.99, was: 27.99, rating: 4.5, reviews: 1320, sold: 8700,
+    warehouse: 'UK', plug: 'None', safety: ['OEKO-TEX'], dims: [60, 40, 12], weight: '2.2 kg',
+    material: 'Shredded memory foam, bamboo cover', colors: ['White'],
+    tags: ['pillow', 'memory foam', 'neck support', 'guest room'],
+    returns: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 93, photo: 90, quality: 86 },
+    desc: 'Adjustable loft — remove foam to make it flatter.',
+  },
+  {
+    id: 'b4', category: 'bedding', name: 'Waterproof Mattress Protector — Double',
+    seller: 'Dreamy Textiles', price: 11.99, was: 17.99, rating: 4.4, reviews: 870, sold: 5600,
+    warehouse: 'CN', plug: 'None', safety: [], dims: [135, 190, 30], weight: '0.8 kg',
+    material: 'Terry cotton, TPU backing', colors: ['White'],
+    tags: ['mattress protector', 'waterproof', 'double', 'fitted'],
+    returns: { free: true, days: 15, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 90, photo: 88, quality: 84 },
+    desc: 'UK double (135 × 190 cm), deep 30 cm skirt.',
+  },
+
+  // ---------- Bathroom ----------
+  {
+    id: 'h1', category: 'bathroom', name: 'Quick-Dry Towel Set (6 pcs)',
+    seller: 'SoftLoop', price: 19.99, was: 29.99, rating: 4.6, reviews: 1460, sold: 9100,
+    warehouse: 'UK', plug: 'None', safety: ['OEKO-TEX'], dims: [140, 70, 1], weight: '2.0 kg',
+    material: '100% cotton, 550 gsm', colors: ['White', 'Grey', 'Sage'],
+    tags: ['towels', 'bath towel', 'hand towel', 'guest room'],
+    returns: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 94, photo: 89, quality: 88 },
+    desc: '2 bath sheets, 2 hand towels, 2 face cloths.',
+  },
+  {
+    id: 'h2', category: 'bathroom', name: 'No-Drill Shower Caddy (2-pack)',
+    seller: 'HomeCube', price: 10.99, was: 16.99, rating: 4.2, reviews: 1150, sold: 7900,
+    warehouse: 'CN', plug: 'None', safety: [], dims: [30, 12, 6], weight: '0.7 kg',
+    material: 'Rust-proof aluminium', colors: ['Black', 'Silver'],
+    tags: ['shower caddy', 'shower shelf', 'bathroom organiser', 'no drill', 'renter friendly'],
+    returns: { free: false, days: 15, method: 'Return to seller warehouse, £3.99 label' },
+    aspects: { size: 87, photo: 84, quality: 78 },
+    desc: 'Adhesive mount, holds up to 8 kg. Ideal for rented homes.',
+  },
+  {
+    id: 'h3', category: 'bathroom', name: 'Memory Foam Bath Mat',
+    seller: 'SoftLoop', price: 8.49, was: 12.99, rating: 4.5, reviews: 2030, sold: 13200,
+    warehouse: 'CN', plug: 'None', safety: [], dims: [80, 50, 1.5], weight: '0.6 kg',
+    material: 'Velvet top, non-slip base', colors: ['Grey', 'Cream', 'Navy'],
+    tags: ['bath mat', 'non slip', 'bathroom rug'],
+    returns: { free: true, days: 15, method: 'Refund only — keep the item (under £10)' },
+    aspects: { size: 92, photo: 86, quality: 83 },
+    desc: 'Super absorbent, machine washable at 30°C.',
+  },
+
+  // ---------- Electricals ----------
+  {
+    id: 'e1', category: 'electricals', name: '4-Way Extension Lead with USB',
+    seller: 'PlugSafe UK', price: 12.99, was: 18.99, rating: 4.8, reviews: 3560, sold: 26400,
+    warehouse: 'UK', plug: 'UK', voltage: '230V', power: '13A / 3120W', safety: ['UKCA', 'BS 1363 plug', 'Surge protected'],
+    dims: [30, 6, 4], weight: '0.5 kg', material: 'Fire-retardant PC',
+    colors: ['White'],
+    tags: ['extension lead', 'power strip', 'usb charger', 'surge protector', 'multi plug'],
+    returns: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 97, photo: 95, quality: 91 },
+    desc: '2 m cable, 4 UK sockets + 2 USB-A + 1 USB-C. Fused UK plug.',
+    featured: true,
+  },
+  {
+    id: 'e2', category: 'electricals', name: 'Smart Plug UK (2-pack)',
+    seller: 'PlugSafe UK', price: 14.99, was: 22.99, rating: 4.6, reviews: 980, sold: 6300,
+    warehouse: 'UK', plug: 'UK', voltage: '230V', power: '13A', safety: ['UKCA'],
+    dims: [5, 5, 7], weight: '0.2 kg', material: 'PC', colors: ['White'],
+    tags: ['smart plug', 'alexa', 'google home', 'timer plug', 'energy monitor'],
+    returns: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 96, photo: 93, quality: 87 },
+    desc: 'Works with Alexa and Google Home. Energy monitoring in the app.',
+  },
+  {
+    id: 'e3', category: 'electricals', name: '65W GaN USB-C Charger',
+    seller: 'Voltix', price: 17.99, was: 29.99, rating: 4.5, reviews: 1730, sold: 11000,
+    warehouse: 'CN', plug: 'UK', voltage: '100–240V', power: '65W', safety: ['UKCA', 'CE'],
+    dims: [5, 3, 6], weight: '0.12 kg', material: 'PC', colors: ['White', 'Black'],
+    tags: ['usb c charger', 'gan charger', 'laptop charger', 'fast charger', 'plug'],
+    returns: { free: true, days: 15, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 95, photo: 91, quality: 86 },
+    desc: 'Charges a laptop and phone at once. Foldable UK pins.',
+  },
+];
+
+// Hand-written reviews for products with a "story" in the demo.
+// Other products get generated reviews (see js/reviews.js).
+export const CUSTOM_REVIEWS = {
+  l2: [
+    { name: 'Tom H.', town: 'Bristol', stars: 2, text: 'Nice lamp but it came with a European plug. Had to buy an adapter from Argos the same day.', tags: ['Plug issue'], photo: true },
+    { name: 'Aisha K.', town: 'Leeds', stars: 4, text: 'Bright and sturdy for the price. Took 11 days to arrive.', tags: ['Slow delivery'] },
+  ],
+  k2: [
+    { name: 'Gemma R.', town: 'Cardiff', stars: 2, text: 'EU plug and only 2200W, so it is slower than my old kettle. Looks nicer in the photos.', tags: ['Plug issue', 'Not as pictured'], photo: true },
+  ],
+  b2: [
+    { name: 'Hannah P.', town: 'Glasgow', stars: 2, text: 'Duvet cover is bigger than a UK king — it swims on my duvet. Check the size!', tags: ['Size mismatch'], photo: true },
+    { name: 'Chris D.', town: 'Norwich', stars: 3, text: 'Soft cotton, but the "king" is a US king. Pillowcases are fine.', tags: ['Size mismatch'] },
+  ],
+  s2: [
+    { name: 'Jess M.', town: 'Brighton', stars: 2, text: 'Did not fit under my bed — measure your clearance first, it needs 19 cm.', tags: ['Size mismatch'] },
+  ],
+};
+
+export const HOT_KEYWORDS = ['bedside lamp', 'kettle', 'under bed storage', 'duvet', 'extension lead', 'towels', 'christmas lights'];

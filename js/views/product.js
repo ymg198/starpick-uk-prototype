@@ -1,0 +1,221 @@
+// Product detail page: key facts, fit check, delivery check, specs, reviews, PK entry points
+import { PRODUCTS } from '../../data/products.js';
+import { getReviews, starBreakdown } from '../reviews.js';
+import {
+  $, $$, esc, money, pctOff, stars, fmtCount, productArt, productCard, getProduct, getCategory,
+  deliveryWindow, deliveryText, fmtDate, dimsText, store, toast,
+} from '../utils.js';
+import { addToPK, addToBasket } from '../app.js';
+
+const PLUG = {
+  UK: { ok: true, text: 'UK 3-pin plug', sub: 'Works in UK sockets — no adapter needed' },
+  EU: { ok: false, text: 'European 2-pin plug', sub: 'You will need a UK travel adapter (about £3)' },
+  USB: { ok: true, text: 'USB powered', sub: 'Use any USB port or USB plug' },
+};
+
+function keyFacts(p) {
+  const rows = [];
+  if (PLUG[p.plug]) rows.push({ ...PLUG[p.plug], icon: 'plug' });
+  if (p.voltage) rows.push({ ok: true, text: `${p.voltage} · ${p.power}`, sub: 'UK mains is 230V' });
+  if (p.plug !== 'None') {
+    const ukca = p.safety.includes('UKCA');
+    rows.push({ ok: ukca, text: ukca ? 'UKCA marked' : 'CE marked only', sub: ukca ? 'Meets UK product safety marking' : 'EU marking — not UKCA marked' });
+  } else if (p.safety.length) {
+    rows.push({ ok: true, text: p.safety.join(' · '), sub: 'Certified materials' });
+  }
+  if (p.sizeNote) rows.push({ ok: false, text: 'Check the size', sub: p.sizeNote });
+  rows.push({
+    ok: p.returns.free,
+    text: p.returns.free ? `Free returns within ${p.returns.days} days` : `Returns cost extra · ${p.returns.days} days`,
+    sub: p.returns.method,
+  });
+  return rows.map((r) => `<li class="${r.ok ? 'ok' : 'warn'}"><span class="fact-dot">${r.ok ? '✓' : '!'}</span><div><strong>${esc(r.text)}</strong><span>${esc(r.sub)}</span></div></li>`).join('');
+}
+
+function reviewItem(r) {
+  return `<article class="review">
+    <div class="review-top">${stars(r.stars, 12)}<span class="muted">${r.daysAgo}d ago</span></div>
+    <p>${esc(r.text)}</p>
+    ${r.photo ? '<div class="review-photo" aria-label="Customer photo"></div>' : ''}
+    <div class="review-foot">
+      <span>${esc(r.name)} · ${esc(r.town)}${r.verified ? ' · <span class="verified">Verified purchase</span>' : ''}</span>
+      <button class="link-btn helpful" data-id="${r.id}">Helpful (${r.helpful})</button>
+    </div>
+    <div class="chips small">${r.tags.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</div>
+  </article>`;
+}
+
+export function renderProduct(el, id) {
+  const p = getProduct(id);
+  if (!p) { el.innerHTML = '<div class="empty card"><h3>Product not found</h3><a href="#/">Back to Today</a></div>'; return; }
+  const cat = getCategory(p.category);
+
+  // remember for recommendations
+  store.set('viewed', [p.id, ...store.get('viewed', []).filter((x) => x !== p.id)].slice(0, 8));
+
+  const reviews = getReviews(p);
+  const breakdown = starBreakdown(p);
+  const similar = PRODUCTS.filter((x) => x.category === p.category && x.id !== p.id);
+  const rivals = similar.slice().sort((a, b) => Math.abs(a.price - p.price) - Math.abs(b.price - p.price)).slice(0, 2);
+  const tagSet = [...new Set(reviews.flatMap((r) => r.tags))];
+  const win = deliveryWindow(p);
+  const defaultNeedBy = new Date(); defaultNeedBy.setDate(defaultNeedBy.getDate() + 7);
+  let unit = 'cm';
+
+  el.innerHTML = `
+  <nav class="crumbs"><a href="#/">Today</a> › <a href="#/search?cat=${cat.id}">${cat.name}</a> › <span>${esc(p.name)}</span></nav>
+
+  <section class="pd-top">
+    ${productArt(p, 'pd-art')}
+    <div class="pd-info">
+      <p class="eyebrow">${esc(p.seller)}</p>
+      <h1>${esc(p.name)}</h1>
+      <button class="pd-rating link-btn" id="to-reviews">${stars(p.rating, 14)} <strong>${p.rating}</strong> <span class="muted">${fmtCount(p.reviews)} ratings · ${fmtCount(p.sold)} sold</span></button>
+      <div class="pd-price"><span class="now">${money(p.price)}</span><s>${money(p.was)}</s><span class="off">−${pctOff(p)}%</span></div>
+      <p class="muted">Price includes VAT. Delivery ${p.warehouse === 'UK' ? 'free over £15' : '£1.99, free over £20'}.</p>
+      ${p.colors.length > 1 ? `<div class="swatches">${p.colors.map((c, i) => `<button class="swatch ${i === 0 ? 'on' : ''}">${esc(c)}</button>`).join('')}</div>` : ''}
+      <p class="pd-desc">${esc(p.desc)}</p>
+      <div class="pd-actions">
+        <button class="pill pill-blue" id="add-basket">Add to basket</button>
+        <button class="pill pill-grey" id="add-pk">+ PK compare</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="pd-panels">
+    <div class="card panel">
+      <h3>Before you buy</h3>
+      <ul class="facts">${keyFacts(p)}</ul>
+    </div>
+
+    <div class="card panel">
+      <h3>Delivery</h3>
+      <p class="big">${deliveryText(p)}</p>
+      <p class="muted">${p.warehouse === 'UK' ? 'Ships from our UK warehouse · tracked by Evri' : 'Ships directly from China · tracked by Royal Mail on arrival'}</p>
+      <label class="field">I need it by
+        <input type="date" id="need-by" value="${defaultNeedBy.toISOString().slice(0, 10)}">
+      </label>
+      <div id="need-result" class="result"></div>
+    </div>
+
+    ${p.dims ? `<div class="card panel">
+      <h3>Will it fit?</h3>
+      <div class="dims-row"><span class="big" id="dims">${dimsText(p.dims)}</span>
+        <div class="seg small"><button data-unit="cm" class="on">cm</button><button data-unit="in">in</button></div></div>
+      <p class="muted">W × D × H. Enter your space to check:</p>
+      <div class="fit-inputs">
+        <input type="number" min="0" placeholder="W" id="fw"><input type="number" min="0" placeholder="D" id="fd"><input type="number" min="0" placeholder="H" id="fh"><span class="muted" id="fit-unit">cm</span>
+      </div>
+      <div id="fit-result" class="result"></div>
+    </div>` : ''}
+  </section>
+
+  <section class="card specs">
+    <h3>Specifications</h3>
+    <dl>
+      <dt>Category</dt><dd>${cat.name}</dd>
+      <dt>Dimensions</dt><dd>${dimsText(p.dims)} (${dimsText(p.dims, 'in')})</dd>
+      <dt>Weight</dt><dd>${p.weight}</dd>
+      <dt>Material</dt><dd>${esc(p.material)}</dd>
+      ${p.power ? `<dt>Power</dt><dd>${p.voltage} · ${p.power}</dd>` : ''}
+      <dt>Plug</dt><dd>${p.plug === 'None' ? 'Not electrical' : PLUG[p.plug].text}</dd>
+      <dt>Certification</dt><dd>${p.safety.join(', ') || '—'}</dd>
+      <dt>Colours</dt><dd>${p.colors.join(', ')}</dd>
+      <dt>Ships from</dt><dd>${p.warehouse === 'UK' ? 'UK warehouse' : 'China'}</dd>
+    </dl>
+  </section>
+
+  ${rivals.length ? `<section class="card pk-teaser">
+    <div><h3>Not sure? PK it.</h3><p class="muted">Compare side by side with similar items.</p></div>
+    <div class="pk-options">${rivals.map((r) => `
+      <a class="pk-option" href="#/compare?ids=${p.id},${r.id}">
+        ${productArt(p, 'mini')}<span class="vs">VS</span>${productArt(r, 'mini')}
+        <span class="pk-name">${esc(r.name)}<br><span class="muted">${money(r.price)} · ${r.rating}★</span></span>
+      </a>`).join('')}</div>
+  </section>` : ''}
+
+  <section class="reviews-wrap" id="reviews">
+    <h2>Ratings & Reviews</h2>
+    <div class="review-summary card">
+      <div class="score"><span class="big-num">${p.rating}</span><span class="muted">out of 5</span></div>
+      <div class="bars">${breakdown.map((v, i) => `<div class="bar-row"><span>${5 - i}★</span><div class="bar"><i style="width:${v}%"></i></div></div>`).join('')}
+        <p class="muted">${fmtCount(p.reviews)} ratings</p></div>
+      <div class="aspects">
+        ${[['size', 'Size as described'], ['photo', 'Looks like the photos'], ['quality', 'Good quality']].map(([k, label]) => `
+          <div class="aspect"><div class="ring" style="--v:${p.aspects[k]}"><span>${p.aspects[k]}%</span></div><span>${label}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="chips" id="review-filters">
+      <button class="chip on" data-f="all">All</button>
+      <button class="chip" data-f="photo">With photos</button>
+      <button class="chip" data-f="5">5 stars</button>
+      <button class="chip" data-f="critical">Critical (1–3★)</button>
+      ${tagSet.map((t) => `<button class="chip" data-f="tag:${esc(t)}">${esc(t)}</button>`).join('')}
+    </div>
+    <div class="review-list" id="review-list"></div>
+  </section>
+
+  <section class="shelf">
+    <div class="shelf-head"><h2>You might also like</h2></div>
+    <div class="shelf-row">${similar.map((x) => productCard(x)).join('')}</div>
+  </section>
+  `;
+
+  // --- interactions ---
+  $('#to-reviews', el).onclick = () => $('#reviews', el).scrollIntoView({ behavior: 'smooth' });
+  $('#add-basket', el).onclick = () => addToBasket(p.id);
+  $('#add-pk', el).onclick = () => addToPK(p.id);
+  $$('.swatch', el).forEach((b) => (b.onclick = () => { $$('.swatch', el).forEach((x) => x.classList.remove('on')); b.classList.add('on'); }));
+
+  const needInput = $('#need-by', el);
+  const checkNeed = () => {
+    const need = new Date(needInput.value + 'T23:59');
+    const box = $('#need-result', el);
+    if (isNaN(need)) { box.innerHTML = ''; return; }
+    if (win.latest <= need) box.innerHTML = `<span class="ok">✓ Arrives in time — latest ${fmtDate(win.latest)}</span>`;
+    else if (win.earliest <= need) box.innerHTML = `<span class="warn">! Might arrive late — could be as late as ${fmtDate(win.latest)}</span>${ukAlternative()}`;
+    else box.innerHTML = `<span class="bad">✕ Won’t arrive in time — earliest ${fmtDate(win.earliest)}</span>${ukAlternative()}`;
+  };
+  const ukAlternative = () => {
+    const alt = similar.find((x) => x.warehouse === 'UK');
+    return alt ? `<a class="alt" href="#/product/${alt.id}">Faster option: ${esc(alt.name)} · ${money(alt.price)} · 2–4 days →</a>` : '';
+  };
+  needInput.addEventListener('input', checkNeed);
+  checkNeed();
+
+  if (p.dims) {
+    const conv = (v) => (unit === 'in' ? v * 2.54 : v);
+    const checkFit = () => {
+      const space = ['#fw', '#fd', '#fh'].map((s) => parseFloat($(s, el).value));
+      const box = $('#fit-result', el);
+      if (space.every(isNaN)) { box.innerHTML = ''; return; }
+      const names = ['width', 'depth', 'height'];
+      const tooBig = p.dims.map((d, i) => (!isNaN(space[i]) && d > conv(space[i]) ? names[i] : null)).filter(Boolean);
+      box.innerHTML = tooBig.length
+        ? `<span class="bad">✕ Too big for your space (${tooBig.join(', ')})</span>`
+        : '<span class="ok">✓ Fits your space</span>';
+    };
+    ['#fw', '#fd', '#fh'].forEach((s) => $(s, el).addEventListener('input', checkFit));
+    $$('[data-unit]', el).forEach((a) => (a.onclick = () => {
+      unit = a.dataset.unit;
+      $$('[data-unit]', el).forEach((x) => x.classList.toggle('on', x === a));
+      $('#dims', el).textContent = dimsText(p.dims, unit);
+      $('#fit-unit', el).textContent = unit;
+      checkFit();
+    }));
+  }
+
+  const list = $('#review-list', el);
+  const renderReviews = (f) => {
+    const filtered = reviews.filter((r) =>
+      f === 'all' ? true : f === 'photo' ? r.photo : f === '5' ? r.stars === 5 : f === 'critical' ? r.stars <= 3 : r.tags.includes(f.slice(4)));
+    list.innerHTML = filtered.length ? filtered.map(reviewItem).join('') : '<p class="muted">No reviews match this filter.</p>';
+    $$('.helpful', list).forEach((b) => (b.onclick = () => { b.disabled = true; b.textContent = 'Thanks!'; }));
+  };
+  $$('#review-filters .chip', el).forEach((c) => (c.onclick = () => {
+    $$('#review-filters .chip', el).forEach((x) => x.classList.remove('on'));
+    c.classList.add('on');
+    renderReviews(c.dataset.f);
+  }));
+  renderReviews('all');
+}
