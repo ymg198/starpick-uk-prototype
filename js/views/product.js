@@ -3,8 +3,9 @@ import { PRODUCTS } from '../../data/products.js';
 import { getReviews, starBreakdown } from '../reviews.js';
 import {
   $, $$, esc, money, pctOff, stars, fmtCount, productArt, productCard, getProduct, getCategory, aspectLabels,
-  deliveryWindow, deliveryText, fmtDate, dimsText, store, toast,
+  deliveryWindow, deliveryText, fmtDate, dimsText, store, toast, openLightbox,
 } from '../utils.js';
+import { productImages, buyerPhotos } from '../images.js';
 import { addToPK, addToBasket } from '../app.js';
 import { currentUser, placeOrder } from '../auth.js';
 
@@ -68,11 +69,15 @@ function specRows(p, cat) {
   return rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
 }
 
-function reviewItem(r) {
+// 1–3 buyer photos per photo review (stable per review)
+const photoCount = (r) => 1 + (r.id.charCodeAt(r.id.length - 1) % 3);
+
+function reviewItem(r, p) {
+  const photos = r.photo ? buyerPhotos(p, r, photoCount(r)) : [];
   return `<article class="review">
     <div class="review-top">${stars(r.stars, 12)}<span class="muted">${r.daysAgo}d ago</span></div>
     <p>${esc(r.text)}</p>
-    ${r.photo ? '<div class="review-photo" aria-label="Customer photo"></div>' : ''}
+    ${photos.length ? `<div class="review-photos">${photos.map((src, k) => `<button class="review-photo" data-review="${r.id}" data-k="${k}"><img src="${src}" alt="Photo from ${esc(r.name)}" loading="lazy"></button>`).join('')}</div>` : ''}
     <div class="review-foot">
       <span>${esc(r.name)} · ${esc(r.town)}${r.verified ? ' · <span class="verified">Verified purchase</span>' : ''}</span>
       <button class="link-btn helpful" data-id="${r.id}">Helpful (${r.helpful})</button>
@@ -88,13 +93,20 @@ export function renderProduct(el, id) {
   store.set('viewed', [p.id, ...store.get('viewed', []).filter((x) => x !== p.id)].slice(0, 8));
 
   const reviews = getReviews(p);
+  const images = productImages(p);
+  const photoReviews = reviews.filter((r) => r.photo);
+  const allPhotos = photoReviews.flatMap((r) => buyerPhotos(p, r, photoCount(r)).map((src) => ({ src, r })));
   const breakdown = starBreakdown(p);
   const labels = aspectLabels(p);
-  const sameSub = PRODUCTS.filter((x) => x.id !== p.id && x.sub === p.sub && x.category === p.category);
+  // Other listings of the same product come first, then the same sub-category
+  const root = p.base || p.id;
+  const sameBase = PRODUCTS.filter((x) => x.id !== p.id && (x.base || x.id) === root);
+  const sameSub = [...sameBase, ...PRODUCTS.filter((x) => x.id !== p.id && (x.base || x.id) !== root && x.sub === p.sub && x.category === p.category)];
   const similar = [...sameSub, ...PRODUCTS.filter((x) => x.id !== p.id && x.category === p.category && !sameSub.includes(x))];
   const shared = (x) => x.tags.filter((t) => p.tags.includes(t)).length;
-  const rivals = sameSub.length
-    ? sameSub.slice().sort((a, b) => Math.abs(a.price - p.price) - Math.abs(b.price - p.price)).slice(0, 2)
+  const rivals = sameBase.length
+    ? sameBase.slice().sort((a, b) => Math.abs(a.price - p.price) - Math.abs(b.price - p.price)).slice(0, 2)
+    : sameSub.length ? sameSub.slice(0, 2)
     : similar.slice().sort((a, b) => shared(b) - shared(a) || Math.abs(a.price - p.price) - Math.abs(b.price - p.price)).slice(0, 2);
   const tagSet = [...new Set(reviews.flatMap((r) => r.tags))];
   const win = deliveryWindow(p);
@@ -106,7 +118,12 @@ export function renderProduct(el, id) {
   <nav class="crumbs"><a href="#/">Today</a> › <a href="#/search?cat=${cat.id}">${cat.name}</a> › <span>${esc(p.name)}</span></nav>
 
   <section class="pd-top">
-    ${productArt(p, 'pd-art')}
+    <div class="gallery">
+      <div class="g-track" id="g-track">${images.map((src, i) => `<button class="g-slide" data-i="${i}" aria-label="Image ${i + 1} of ${images.length}"><img src="${src}" alt="${esc(p.name)} — image ${i + 1}"></button>`).join('')}</div>
+      <span class="g-count" id="g-count">1 / ${images.length}</span>
+      <button class="g-nav g-prev" id="g-prev" aria-label="Previous image">‹</button><button class="g-nav g-next" id="g-next" aria-label="Next image">›</button>
+      <div class="g-thumbs">${images.map((src, i) => `<button class="g-thumb ${i === 0 ? 'on' : ''}" data-i="${i}"><img src="${src}" alt=""></button>`).join('')}</div>
+    </div>
     <div class="pd-info">
       <p class="eyebrow">${esc(p.seller)}${p.official ? ' <span class="official">Official</span>' : ''}</p>
       <h1>${esc(p.name)}</h1>
@@ -177,6 +194,10 @@ export function renderProduct(el, id) {
           <div class="aspect"><div class="ring" style="--v:${p.aspects[k]}"><span>${p.aspects[k]}%</span></div><span>${labels[k]}</span></div>`).join('')}
       </div>
     </div>
+    ${allPhotos.length ? `<div class="buyer-show">
+      <div class="bs-head"><h3>Customer photos</h3><span class="muted">${allPhotos.length} photos from ${photoReviews.length} reviews</span></div>
+      <div class="bs-row">${allPhotos.map((x, i) => `<button class="bs-photo" data-i="${i}"><img src="${x.src}" alt="Customer photo" loading="lazy"></button>`).join('')}</div>
+    </div>` : ''}
     <div class="chips" id="review-filters">
       <button class="chip on" data-f="all">All</button>
       <button class="chip" data-f="photo">With photos</button>
@@ -192,6 +213,22 @@ export function renderProduct(el, id) {
     <div class="shelf-row">${similar.slice(0, 10).map((x) => productCard(x)).join('')}</div>
   </section>
   `;
+
+  // --- gallery ---
+  const track = $('#g-track', el);
+  const thumbs = $$('.g-thumb', el);
+  const cur = () => Math.round(track.scrollLeft / track.clientWidth);
+  const goTo = (i) => track.scrollTo({ left: ((i + images.length) % images.length) * track.clientWidth, behavior: 'smooth' });
+  track.addEventListener('scroll', () => {
+    const i = cur();
+    $('#g-count', el).textContent = `${i + 1} / ${images.length}`;
+    thumbs.forEach((t, k) => t.classList.toggle('on', k === i));
+  }, { passive: true });
+  thumbs.forEach((t) => (t.onclick = () => goTo(+t.dataset.i)));
+  $('#g-prev', el).onclick = () => goTo(cur() - 1);
+  $('#g-next', el).onclick = () => goTo(cur() + 1);
+  $$('.g-slide', el).forEach((b) => (b.onclick = () => openLightbox(images, +b.dataset.i, p.name)));
+  $$('.bs-photo', el).forEach((b) => (b.onclick = () => openLightbox(allPhotos.map((x) => x.src), +b.dataset.i, 'Customer photos')));
 
   // --- interactions ---
   $('#to-reviews', el).onclick = () => $('#reviews', el).scrollIntoView({ behavior: 'smooth' });
@@ -250,7 +287,11 @@ export function renderProduct(el, id) {
   const renderReviews = (f) => {
     const filtered = reviews.filter((r) =>
       f === 'all' ? true : f === 'photo' ? r.photo : f === '5' ? r.stars === 5 : f === 'critical' ? r.stars <= 3 : r.tags.includes(f.slice(4)));
-    list.innerHTML = filtered.length ? filtered.map(reviewItem).join('') : '<p class="muted">No reviews match this filter.</p>';
+    list.innerHTML = filtered.length ? filtered.map((r) => reviewItem(r, p)).join('') : '<p class="muted">No reviews match this filter.</p>';
+    $$('.review-photo', list).forEach((b) => (b.onclick = () => {
+      const r = reviews.find((x) => x.id === b.dataset.review);
+      openLightbox(buyerPhotos(p, r, photoCount(r)), +b.dataset.k, `${r.name} · ${r.town}`);
+    }));
     $$('.helpful', list).forEach((b) => (b.onclick = () => { b.disabled = true; b.textContent = 'Thanks!'; }));
   };
   $$('#review-filters .chip', el).forEach((c) => (c.onclick = () => {

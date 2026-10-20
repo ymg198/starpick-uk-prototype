@@ -57,7 +57,7 @@ export function renderCompare(el, params) {
   const cat = items[0].category;
   const sub = items[0].sub;
   const rank = (p) => (p.sub === sub && p.category === cat ? 2 : p.category === cat ? 1 : 0);
-  const candidates = PRODUCTS.filter((p) => !ids.includes(p.id)).sort((a, b) => rank(b) - rank(a));
+  const candidates = PRODUCTS.filter((p) => !ids.includes(p.id) && p.category === cat).sort((a, b) => rank(b) - rank(a) || b.sold - a.sold).slice(0, 40);
   const cols = items.length + (items.length < 3 ? 1 : 0);
 
   el.innerHTML = `

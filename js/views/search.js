@@ -39,6 +39,14 @@ export function renderSearch(el, params) {
   };
   if (sorters[sort]) items = [...items].sort(sorters[sort]);
 
+  // Every search shows at least 10 products: top up with related items from the same categories
+  let related = [];
+  if (q && items.length < 10) {
+    const cats = new Set(items.map((p) => p.category));
+    const pool = PRODUCTS.filter((p) => !items.includes(p) && (cats.size ? cats.has(p.category) : true)).sort((a, b) => b.weekSold - a.weekSold);
+    related = pool.slice(0, Math.max(10 - items.length, cats.size ? 6 : 12));
+  }
+
   const link = (patch) => {
     const p = new URLSearchParams(params);
     Object.entries(patch).forEach(([k, v]) => (v === null || v === '' ? p.delete(k) : p.set(k, v)));
@@ -66,13 +74,14 @@ export function renderSearch(el, params) {
     </div>
   </div>
 
-  <p class="muted count">${items.length} item${items.length === 1 ? '' : 's'}</p>
+  <p class="muted count">${items.length} result${items.length === 1 ? '' : 's'}${related.length ? ` · plus ${related.length} related` : ''}</p>
   ${items.length ? `<div class="grid">${items.map((p) => productCard(p)).join('')}</div>` : `
     <div class="empty card">
-      <h3>No matches</h3>
-      <p class="muted">Try one of these popular searches:</p>
+      <h3>No exact matches for “${esc(q)}”</h3>
+      <p class="muted">Try one of these popular searches, or browse what’s trending below.</p>
       <div class="chips">${HOT_KEYWORDS.map((k) => `<a class="chip" href="#/search?q=${encodeURIComponent(k)}">${k}</a>`).join('')}</div>
     </div>`}
+  ${related.length ? `<div class="related-head"><h2>${items.length ? 'More you might like' : 'Trending now'}</h2></div><div class="grid">${related.map((p) => productCard(p)).join('')}</div>` : ''}
   `;
 
   el.querySelector('#sort').addEventListener('change', (e) => { location.hash = link({ sort: e.target.value }); });

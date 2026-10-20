@@ -23,13 +23,13 @@ const CAT_GOOD = {
   travel: [['Took it on three trips already, no problems.', 'Durable']],
 };
 const MIXED = [
-  ['Decent for the money, colour slightly lighter than the photo.', 'Not as pictured'],
+  ['Decent for the money, but not quite like the photos.', 'Not as pictured'],
   ['Does the job, but packaging was a bit crushed.', 'Packaging'],
   ['Good but took a while to arrive.', 'Slow delivery'],
 ];
 const BAD = [
   ['Smaller than I expected — check the measurements.', 'Size mismatch'],
-  ['Quality is not great, stitching came loose after a week.', 'Quality issue'],
+  ['Quality is not great for the price — expected better.', 'Quality issue'],
 ];
 
 // small deterministic random so reviews stay the same on every load

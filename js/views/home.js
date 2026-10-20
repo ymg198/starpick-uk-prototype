@@ -26,7 +26,7 @@ export function todaysPicks() {
 // ---------- Guess You Like ----------
 // Related categories, used when someone bought in one area (e.g. trainers → sportswear)
 const RELATED = { fashion: ['sports'], sports: ['fashion', 'electronics'], food: ['kitchen'], kitchen: ['food', 'home'], electronics: ['travel', 'sports'], travel: ['electronics'], beauty: ['fashion'], home: ['kitchen'] };
-const shortName = (p) => p.name.replace(/^(Strider|Northwind|Sonique|Aurelle|Maison Clarke|Hearth & Co)\s/, '').split(' ').slice(0, 3).join(' ');
+const shortName = (p) => p.name.replace(/^(Kestrun|Norhaven|Sonaro|Aurevia|Maison Ardel|Hearthly)\s/, '').split(' ').slice(0, 3).join(' ');
 
 export function guessYouLike(user = currentUser()) {
   const bought = purchasedIds(user).map(getProduct).filter(Boolean);
@@ -115,7 +115,7 @@ export function renderHome(el) {
     guess,
     { extra: user ? '' : '<button class="link-btn" id="signin-hint">Sign in for picks based on your orders</button>' })}
 
-  ${shelf('Big Brands', 'Official stores · genuine products · free UK returns', PRODUCTS.filter((p) => p.official).sort((a, b) => b.rating - a.rating), { link: '#/search?brand=1' })}
+  ${shelf('Big Brands', 'Official stores · genuine products · free UK returns', PRODUCTS.filter((p) => p.official).sort((a, b) => (a.variant - b.variant) || b.rating - a.rating).slice(0, 12), { link: '#/search?brand=1' })}
 
   <section class="collections">
     ${COLLECTIONS.map((c) => `
@@ -128,7 +128,7 @@ export function renderHome(el) {
   </section>
 
   ${shelf('Arrives in 2–4 days', 'From our UK warehouse', PRODUCTS.filter((p) => p.warehouse === 'UK').sort((a, b) => b.weekSold - a.weekSold).slice(0, 12), { link: '#/search?uk=1' })}
-  ${shelf('Under £10', 'Little things, big difference', PRODUCTS.filter((p) => p.price < 10), { link: '#/search?max=10' })}
+  ${shelf('Under £10', 'Little things, big difference', PRODUCTS.filter((p) => p.price < 10).sort((a, b) => b.weekSold - a.weekSold).slice(0, 12), { link: '#/search?max=10' })}
   `;
 
   // ---- carousel behaviour: arrows, dots, swipe (scroll-snap), autoplay ----

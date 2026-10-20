@@ -1,4 +1,5 @@
 import { CATEGORIES, PRODUCTS, ASPECT_LABELS } from '../data/products.js';
+import { mainImageUri, cutoutUri } from './images.js';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -76,10 +77,9 @@ export const ICONS = {
 };
 export const icon = (name, attrs = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${attrs}>${ICONS[name] || ICONS.box}</svg>`;
 
+// Clean product shot (no text) — small tiles, carousel, PK table
 export function productArt(p, cls = '') {
-  const c = getCategory(p.category);
-  const angle = 120 + (p.id.charCodeAt(1) * 37 + p.id.charCodeAt(0)) % 90;
-  return `<div class="art ${cls}" style="background:linear-gradient(${angle}deg, ${c.colors[0]}, ${c.colors[1]});color:#fff">${icon(p.icon || c.icon)}</div>`;
+  return `<img class="art ${cls}" src="${cutoutUri(p)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`;
 }
 export const categoryIcon = (c) => icon(c.icon);
 
@@ -105,7 +105,7 @@ export function toast(msg) {
 // ---------- Product card (shared) ----------
 export function productCard(p, opts = {}) {
   return `<a class="card product-card" href="#/product/${p.id}">
-    ${productArt(p)}
+    <img class="card-img" src="${mainImageUri(p)}" alt="${esc(p.name)}" loading="lazy" decoding="async">
     <div class="pc-body">
       ${p.official ? `<div class="pc-brand">${esc(p.brand)} <span class="official">Official</span></div>` : ''}
       <div class="pc-name">${esc(p.name)}</div>
@@ -117,4 +117,33 @@ export function productCard(p, opts = {}) {
       </div>
     </div>
   </a>`;
+}
+
+// ---------- Lightbox (merchant images, buyer photos) ----------
+export function openLightbox(list, start = 0, caption = '') {
+  let i = start;
+  const box = document.createElement('div');
+  box.className = 'lightbox';
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-modal', 'true');
+  const render = () => {
+    box.innerHTML = `<button class="lb-close" aria-label="Close">×</button>
+      ${list.length > 1 ? '<button class="lb-prev" aria-label="Previous">‹</button><button class="lb-next" aria-label="Next">›</button>' : ''}
+      <figure><img src="${list[i]}" alt=""><figcaption>${esc(caption)}${list.length > 1 ? ` · ${i + 1} / ${list.length}` : ''}</figcaption></figure>`;
+    box.querySelector('.lb-close').onclick = close;
+    if (list.length > 1) {
+      box.querySelector('.lb-prev').onclick = (e) => { e.stopPropagation(); i = (i - 1 + list.length) % list.length; render(); };
+      box.querySelector('.lb-next').onclick = (e) => { e.stopPropagation(); i = (i + 1) % list.length; render(); };
+    }
+  };
+  const close = () => { box.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => {
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowRight' && list.length > 1) { i = (i + 1) % list.length; render(); }
+    if (e.key === 'ArrowLeft' && list.length > 1) { i = (i - 1 + list.length) % list.length; render(); }
+  };
+  box.addEventListener('click', (e) => { if (e.target === box) close(); });
+  document.addEventListener('keydown', onKey);
+  render();
+  document.body.appendChild(box);
 }

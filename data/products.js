@@ -1,6 +1,8 @@
 // Sample catalogue for the StarPick UK prototype.
 // All products, brands, prices and reviews are made up for demo purposes.
-// To add a product: add a make({...}) entry below with a unique `id`.
+// To add a product: add a make({...}) entry below with a unique `id`, and a blueprint in data/variants.js
+// (which drawing to use + words for generating similar listings).
+import { generateVariants } from './variants.js';
 
 export const CATEGORIES = [
   { id: 'fashion',     name: 'Fashion',          icon: 'shirt',      colors: ['#ff8fb1', '#c2185b'] },
@@ -47,15 +49,15 @@ function make(p) {
 // sub: sub-category used for "similar items" and PK suggestions
 // plug: 'UK' | 'EU' | 'USB' | 'None';  dims: [W, D, H] cm
 // fashion: sizes, fit, care · food: netWeight, bestBefore, allergens, storage · beauty: volume, skinType, crueltyFree
-export const PRODUCTS = [
+const BASE_PRODUCTS = [
   // ================= Fashion =================
-  make({ id: 'f1', category: 'fashion', sub: 'Shoes', icon: 'shoe', name: 'Strider AirFlow Running Trainers', brand: 'Strider', official: true,
-    seller: 'Strider Official Store', price: 64.99, was: 89.99, rating: 4.8, reviews: 5210, sold: 41000, weekSold: 3100, warehouse: 'UK',
+  make({ id: 'f1', category: 'fashion', sub: 'Shoes', icon: 'shoe', name: 'Kestrun AirFlow Running Trainers', brand: 'Kestrun', official: true,
+    seller: 'Kestrun Official Store', price: 64.99, was: 89.99, rating: 4.8, reviews: 5210, sold: 41000, weekSold: 3100, warehouse: 'UK',
     sizes: ['UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11'], fit: 'True to size', care: 'Wipe clean', material: 'Engineered mesh, foam midsole',
     colors: ['Black', 'White', 'Volt'], tags: ['running shoes', 'trainers', 'sneakers', 'gym', 'mens', 'womens'],
     aspects: { size: 95, photo: 94, quality: 93 }, desc: 'Lightweight daily trainer with responsive cushioning. Free returns on all sizes.', featured: true }),
-  make({ id: 'f2', category: 'fashion', sub: 'Coats & Jackets', icon: 'coat', name: 'Northwind Packable Down Jacket', brand: 'Northwind', official: true,
-    seller: 'Northwind Official Store', price: 79.0, was: 129.0, rating: 4.7, reviews: 1840, sold: 15200, weekSold: 1800, warehouse: 'UK',
+  make({ id: 'f2', category: 'fashion', sub: 'Coats & Jackets', icon: 'coat', name: 'Norhaven Packable Down Jacket', brand: 'Norhaven', official: true,
+    seller: 'Norhaven Official Store', price: 79.0, was: 129.0, rating: 4.7, reviews: 1840, sold: 15200, weekSold: 1800, warehouse: 'UK',
     sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'], fit: 'Runs small — size up', care: 'Machine wash 30°C', material: '90/10 down, recycled nylon',
     colors: ['Black', 'Navy', 'Olive'], tags: ['down jacket', 'puffer', 'coat', 'winter', 'warm'],
     aspects: { size: 82, photo: 93, quality: 92 }, desc: 'Packs into its own pocket. Warm to around −5°C.' }),
@@ -69,8 +71,8 @@ export const PRODUCTS = [
     sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'], fit: 'Runs large — consider sizing down', care: 'Machine wash 40°C', material: '100% combed cotton, 180 gsm',
     colors: ['White', 'Black', 'Grey marl'], tags: ['t shirt', 'tee', 'basics', 'cotton', 'mens', 'womens'],
     aspects: { size: 79, photo: 87, quality: 83 }, desc: 'Heavyweight basics that keep their shape wash after wash.' }),
-  make({ id: 'f5', category: 'fashion', sub: 'Bags', icon: 'bag', name: 'Maison Clarke Leather Tote', brand: 'Maison Clarke', official: true,
-    seller: 'Maison Clarke Official Store', price: 59.0, was: 95.0, rating: 4.9, reviews: 760, sold: 6400, weekSold: 600, warehouse: 'UK',
+  make({ id: 'f5', category: 'fashion', sub: 'Bags', icon: 'bag', name: 'Maison Ardel Leather Tote', brand: 'Maison Ardel', official: true,
+    seller: 'Maison Ardel Official Store', price: 59.0, was: 95.0, rating: 4.9, reviews: 760, sold: 6400, weekSold: 600, warehouse: 'UK',
     dims: [38, 14, 30], material: 'Full-grain leather', care: 'Leather balm', colors: ['Tan', 'Black'],
     tags: ['tote bag', 'handbag', 'leather bag', 'work bag', 'gift'],
     aspects: { size: 96, photo: 95, quality: 96 }, desc: 'Fits a 14" laptop. Hand-finished edges, inner zip pocket.', featured: true }),
@@ -170,8 +172,8 @@ export const PRODUCTS = [
     plug: 'EU', voltage: '220–240V', power: '2200W', safety: ['CE'], dims: [23, 16, 26], weight: '1.3 kg', material: 'Borosilicate glass',
     colors: ['Clear'], tags: ['kettle', 'glass kettle', 'electric kettle', 'tea'], returns: { free: false, days: 15, method: 'Return to seller warehouse, £4.99 label' },
     aspects: { size: 90, photo: 76, quality: 74 }, desc: 'Blue LED while boiling. Ships with a European plug.' }),
-  make({ id: 'k3', category: 'kitchen', sub: 'Cookware', icon: 'pot', name: 'Hearth & Co Non-stick Pan Set (3 pcs)', brand: 'Hearth & Co', official: true,
-    seller: 'Hearth & Co Official Store', price: 49.0, was: 79.0, rating: 4.8, reviews: 1890, sold: 10800, weekSold: 950, warehouse: 'UK',
+  make({ id: 'k3', category: 'kitchen', sub: 'Cookware', icon: 'pot', name: 'Hearthly Non-stick Pan Set (3 pcs)', brand: 'Hearthly', official: true,
+    seller: 'Hearthly Official Store', price: 49.0, was: 79.0, rating: 4.8, reviews: 1890, sold: 10800, weekSold: 950, warehouse: 'UK',
     safety: ['PFAS-free'], dims: [28, 28, 5], weight: '2.4 kg', material: 'Forged aluminium, ceramic coating', colors: ['Graphite', 'Sage'],
     tags: ['frying pan', 'pan set', 'non stick', 'induction', 'cookware'],
     aspects: { size: 95, photo: 94, quality: 94 }, desc: '20/24/28 cm pans for gas, electric and induction. 10-year guarantee.' }),
@@ -182,8 +184,8 @@ export const PRODUCTS = [
     aspects: { size: 89, photo: 88, quality: 84 }, desc: 'Stackable, dishwasher-safe, with labels and a marker pen.' }),
 
   // ================= Electronics =================
-  make({ id: 'e4', category: 'electronics', sub: 'Audio', icon: 'headphones', name: 'Sonique ANC Wireless Headphones', brand: 'Sonique', official: true,
-    seller: 'Sonique Official Store', price: 89.0, was: 149.0, rating: 4.8, reviews: 3640, sold: 26000, weekSold: 2200, warehouse: 'UK',
+  make({ id: 'e4', category: 'electronics', sub: 'Audio', icon: 'headphones', name: 'Sonaro ANC Wireless Headphones', brand: 'Sonaro', official: true,
+    seller: 'Sonaro Official Store', price: 89.0, was: 149.0, rating: 4.8, reviews: 3640, sold: 26000, weekSold: 2200, warehouse: 'UK',
     plug: 'USB', voltage: 'USB-C charging', power: '40 h battery', safety: ['UKCA', 'CE'], weight: '0.25 kg', material: 'Aluminium, protein leather',
     colors: ['Black', 'Silver', 'Midnight Blue'], tags: ['headphones', 'noise cancelling', 'wireless', 'bluetooth', 'gift'],
     aspects: { size: 96, photo: 95, quality: 94 }, desc: 'Adaptive noise cancelling, 40-hour battery, multipoint Bluetooth 5.3.', featured: true }),
@@ -215,8 +217,8 @@ export const PRODUCTS = [
     aspects: { size: 95, photo: 91, quality: 86 }, desc: 'Charges a laptop and phone at once. Foldable UK pins.' }),
 
   // ================= Beauty =================
-  make({ id: 'y1', category: 'beauty', sub: 'Skincare', icon: 'bottle', name: 'Aurelle Hyaluronic Hydrating Serum 30 ml', brand: 'Aurelle', official: true,
-    seller: 'Aurelle Official Store', price: 24.0, was: 38.0, rating: 4.9, reviews: 4280, sold: 31000, weekSold: 1500, warehouse: 'UK',
+  make({ id: 'y1', category: 'beauty', sub: 'Skincare', icon: 'bottle', name: 'Aurevia Hyaluronic Hydrating Serum 30 ml', brand: 'Aurevia', official: true,
+    seller: 'Aurevia Official Store', price: 24.0, was: 38.0, rating: 4.9, reviews: 4280, sold: 31000, weekSold: 1500, warehouse: 'UK',
     volume: '30 ml', skinType: 'All skin types, incl. sensitive', crueltyFree: true, material: 'Hyaluronic acid 2%, vitamin B5',
     tags: ['serum', 'hyaluronic acid', 'skincare', 'moisturiser', 'gift'], returns: { free: true, days: 30, method: 'Unopened items, free drop-off' },
     aspects: { size: 94, photo: 95, quality: 96 }, desc: 'Lightweight serum for plump, hydrated skin. Fragrance-free.', featured: true }),
@@ -232,8 +234,8 @@ export const PRODUCTS = [
     aspects: { size: 89, photo: 85, quality: 83 }, desc: 'Dries and styles in one step, 3 heat settings, UK plug.' }),
 
   // ================= Sports & Outdoors =================
-  make({ id: 'p1', category: 'sports', sub: 'Yoga & Fitness', icon: 'dumbbell', name: 'Strider Pro Yoga Mat 6 mm', brand: 'Strider', official: true,
-    seller: 'Strider Official Store', price: 24.99, was: 39.99, rating: 4.8, reviews: 2120, sold: 17500, warehouse: 'UK',
+  make({ id: 'p1', category: 'sports', sub: 'Yoga & Fitness', icon: 'dumbbell', name: 'Kestrun Pro Yoga Mat 6 mm', brand: 'Kestrun', official: true,
+    seller: 'Kestrun Official Store', price: 24.99, was: 39.99, rating: 4.8, reviews: 2120, sold: 17500, warehouse: 'UK',
     dims: [183, 61, 0.6], weight: '1.2 kg', material: 'Natural rubber, PU top', colors: ['Black', 'Sage', 'Lilac'],
     tags: ['yoga mat', 'exercise mat', 'pilates', 'gym', 'home workout'],
     aspects: { size: 95, photo: 94, quality: 93 }, desc: 'Non-slip grip even when wet. Comes with a carry strap.' }),
@@ -270,6 +272,9 @@ export const PRODUCTS = [
     tags: ['packing cubes', 'travel organiser', 'luggage', 'travel'],
     aspects: { size: 93, photo: 91, quality: 87 }, desc: 'Zip compression saves about 30% space in your case.' }),
 ];
+
+// Base products first, then ~9 similar listings per product from other (fictional) sellers
+export const PRODUCTS = [...BASE_PRODUCTS, ...generateVariants(BASE_PRODUCTS)];
 
 // Hand-written reviews for products with a "story" in the demo.
 // Other products get generated reviews (see js/reviews.js).
