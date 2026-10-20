@@ -6,6 +6,9 @@ import { renderHome } from './views/home.js';
 import { renderSearch } from './views/search.js';
 import { renderProduct } from './views/product.js';
 import { renderCompare } from './views/compare.js';
+import { renderAccount } from './views/account.js';
+import { currentUser, signIn, initials } from './auth.js';
+import { icon } from './utils.js';
 
 // ---------- Shared state ----------
 export function setPK(ids) { store.set('pk', ids); renderTray(); }
@@ -102,6 +105,60 @@ function initSearch() {
   });
 }
 
+// ---------- Account: avatar + sign-in sheet ----------
+function renderAvatar() {
+  const u = currentUser();
+  const btn = $('#avatar');
+  btn.innerHTML = u ? `<span class="avatar-initials">${initials(u.name)}</span>` : icon('user');
+  btn.classList.toggle('signed-in', !!u);
+  btn.setAttribute('aria-label', u ? `Account: ${u.name}` : 'Sign in');
+}
+
+function openSignIn() {
+  const sheet = $('#signin');
+  sheet.innerHTML = `
+    <button class="sheet-close" id="si-close" aria-label="Close">×</button>
+    <div class="si-logo">${icon('user')}</div>
+    <h2 id="signin-title">Sign in to StarPick</h2>
+    <p class="muted">Track orders and get picks based on what you buy.</p>
+    <button class="si-btn si-apple" data-method="apple"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.5-1-2.5-3.8zM14 5.3c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1 .1 2.1-.6 2.8-1.4z"/></svg>Continue with Apple</button>
+    <button class="si-btn si-google" data-method="google"><span class="g-mark">G</span>Continue with Google</button>
+    <div class="si-or"><span>or use email</span></div>
+    <form id="si-form">
+      <input type="email" id="si-email" placeholder="Email" value="emma.wilson@example.co.uk" required>
+      <input type="password" id="si-pass" placeholder="Password" value="demo1234" required>
+      <button class="pill pill-blue si-submit" type="submit">Sign in</button>
+    </form>
+    <p class="si-foot muted">New here? <button class="link-btn" data-method="register">Create an account</button></p>
+    <p class="si-note muted">Prototype: every option signs in to the demo account.</p>`;
+  sheet.hidden = false;
+  $('#signin-backdrop').hidden = false;
+  requestAnimationFrame(() => sheet.classList.add('show'));
+  const done = (method) => {
+    const u = signIn(method, $('#si-email').value);
+    closeSignIn();
+    renderAvatar();
+    toast(`Welcome back, ${u.name.split(' ')[0]}`);
+    route();
+  };
+  $$('[data-method]', sheet).forEach((b) => (b.onclick = () => done(b.dataset.method)));
+  $('#si-form').onsubmit = (e) => { e.preventDefault(); done('email'); };
+  $('#si-close').onclick = closeSignIn;
+}
+function closeSignIn() {
+  $('#signin').classList.remove('show');
+  $('#signin').hidden = true;
+  $('#signin-backdrop').hidden = true;
+}
+function initAccount() {
+  renderAvatar();
+  $('#avatar').onclick = () => (currentUser() ? (location.hash = '#/account') : openSignIn());
+  $('#signin-backdrop').onclick = closeSignIn;
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSignIn(); });
+  document.addEventListener('open-signin', openSignIn);
+  document.addEventListener('auth-changed', renderAvatar);
+}
+
 // ---------- Router ----------
 function route() {
   const el = $('#view');
@@ -110,6 +167,7 @@ function route() {
   const parts = (path || '/').split('/').filter(Boolean);
 
   $$('.tab').forEach((t) => t.classList.toggle('on', t.dataset.tab === (parts[0] || 'home')));
+  $('#avatar').classList.toggle('on', parts[0] === 'account');
   if (parts[0] !== 'search') $('#q').value = '';
   else $('#q').value = params.get('q') || '';
 
@@ -117,6 +175,7 @@ function route() {
   else if (parts[0] === 'search') renderSearch(el, params);
   else if (parts[0] === 'product') renderProduct(el, parts[1]);
   else if (parts[0] === 'compare') renderCompare(el, params);
+  else if (parts[0] === 'account') renderAccount(el);
   else renderHome(el);
 
   renderTray();
@@ -125,5 +184,6 @@ function route() {
 
 window.addEventListener('hashchange', route);
 initSearch();
+initAccount();
 updateBasket();
 route();

@@ -6,13 +6,22 @@ const NAMES = ['Sophie', 'James', 'Olivia', 'Harry', 'Emily', 'Jack', 'Amelia', 
 const TOWNS = ['London', 'Manchester', 'Birmingham', 'Leeds', 'Glasgow', 'Liverpool', 'Sheffield', 'Bristol', 'Nottingham', 'Leicester', 'Edinburgh', 'Cardiff', 'Belfast', 'York', 'Oxford'];
 
 const GOOD = [
-  ['Exactly the size stated — fits perfectly.', 'Size accurate'],
+  ['Exactly as described — really happy with it.', 'As described'],
   ['Looks just like the photos. Really pleased.', 'As pictured'],
   ['Great quality for the price, feels sturdy.', 'Good quality'],
   ['Arrived earlier than expected and well packed.', 'Fast delivery'],
-  ['Bought two more for the guest room. Brilliant value.', 'Great value'],
+  ['Brilliant value — bought another one as a gift.', 'Great value'],
   ['Easy to set up, no instructions needed.', 'Easy setup'],
 ];
+// Extra praise that only makes sense in one category
+const CAT_GOOD = {
+  fashion: [['True to size and the fabric feels premium.', 'Size accurate'], ['Wore it all week — so comfortable.', 'Comfortable']],
+  food: [['Tastes amazing, will definitely reorder.', 'Great taste'], ['Arrived fresh with a long best-before date.', 'Fresh']],
+  beauty: [['My skin feels so much softer after a week.', 'Works well'], ['No irritation at all on sensitive skin.', 'Gentle']],
+  electronics: [['Works perfectly straight out of the box.', 'Works well'], ['Feels premium for the price.', 'Great value']],
+  sports: [['Used it at the gym every day, holding up well.', 'Durable']],
+  travel: [['Took it on three trips already, no problems.', 'Durable']],
+};
 const MIXED = [
   ['Decent for the money, colour slightly lighter than the photo.', 'Not as pictured'],
   ['Does the job, but packaging was a bit crushed.', 'Packaging'],
@@ -35,7 +44,9 @@ export function getReviews(p) {
   for (let i = 0; i < 9; i++) {
     const roll = r() * 5;
     const stars = roll < p.rating - 0.6 ? 5 : roll < p.rating ? 4 : roll < p.rating + 0.4 ? 3 : 2;
-    const pool = stars >= 4 ? GOOD : stars === 3 ? MIXED : BAD;
+    // 'Easy to set up' only makes sense for things you assemble or plug in
+    const good = [...(CAT_GOOD[p.category] || []), ...(['fashion', 'food', 'beauty'].includes(p.category) ? GOOD.slice(0, 5) : GOOD)];
+    const pool = stars >= 4 ? good : stars === 3 ? MIXED : BAD;
     const [text, tag] = pool[Math.floor(r() * pool.length)];
     list.push({
       id: p.id + 'g' + i,

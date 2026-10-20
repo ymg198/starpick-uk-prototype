@@ -5,13 +5,20 @@ import { PRODUCTS, CATEGORIES } from '../data/products.js';
 // Words people type → words in our catalogue
 const SYNONYMS = {
   comforter: 'duvet', quilt: 'duvet', blanket: 'duvet',
-  flashlight: 'torch', 'power strip': 'extension', 'multi plug': 'extension', adapter: 'plug',
-  closet: 'wardrobe', trash: 'bin', faucet: 'tap', couch: 'sofa',
+  'power strip': 'extension', 'multi plug': 'extension', adapter: 'adapter',
   light: 'lamp', lights: 'lamp', lighting: 'lamp', bulb: 'lamp',
-  storage: 'storage', organizer: 'organiser', organisers: 'organiser',
-  pan: 'pan', pans: 'pan', pot: 'pan', cookware: 'pan',
-  towel: 'towels', pillows: 'pillow', kettles: 'kettle', lamps: 'lamp', boxes: 'box',
+  organizer: 'organiser', organisers: 'organiser', cookware: 'pan', pans: 'pan',
+  towel: 'towels', kettles: 'kettle', lamps: 'lamp', boxes: 'box',
   xmas: 'christmas', fairy: 'strip',
+  // fashion (US → UK)
+  sneakers: 'trainers', sneaker: 'trainers', shoes: 'trainers', sweater: 'jumper', pullover: 'jumper',
+  puffer: 'down', parka: 'jacket', coats: 'coat', jackets: 'jacket', tshirt: 'tee', tees: 'tee', purse: 'bag', handbag: 'bag',
+  // food
+  choc: 'chocolate', chocolates: 'chocolate', candy: 'sweets', ramen: 'noodles', snack: 'snacks', beans: 'beans',
+  // electronics
+  earphones: 'earbuds', airpods: 'earbuds', headset: 'headphones', charger: 'charger', powerbank: 'power',
+  // beauty / travel
+  sunblock: 'sunscreen', suncream: 'sunscreen', luggage: 'suitcase', carryon: 'cabin',
 };
 
 const STOP = new Set(['the', 'a', 'an', 'for', 'with', 'and', 'of', 'to', 'in', '&', '-', '—']);
@@ -31,6 +38,8 @@ for (const p of PRODUCTS) {
   tokenize(cat.name).forEach((t) => add(t, p.id, 1.5));
   tokenize(p.material).forEach((t) => add(t, p.id, 0.5));
   tokenize(p.seller).forEach((t) => add(t, p.id, 0.5));
+  if (p.brand) tokenize(p.brand).forEach((t) => add(t, p.id, 2));
+  if (p.sub) tokenize(p.sub).forEach((t) => add(t, p.id, 1.5));
 }
 const TERMS = [...INDEX.keys()];
 
@@ -72,7 +81,7 @@ export function search(query) {
 }
 
 // Autocomplete: tag phrases + product names that contain the typed prefix
-const PHRASES = [...new Set(PRODUCTS.flatMap((p) => [...p.tags, p.name.toLowerCase()]))];
+const PHRASES = [...new Set(PRODUCTS.flatMap((p) => [...p.tags, p.name.toLowerCase(), ...(p.brand ? [p.brand.toLowerCase()] : [])]))];
 export function suggest(prefix, limit = 7) {
   const q = prefix.toLowerCase().trim();
   if (!q) return [];

@@ -11,6 +11,7 @@ export function renderSearch(el, params) {
   const uk = params.get('uk') === '1';
   const max = parseFloat(params.get('max')) || null;
   const ids = params.get('ids');
+  const brand = params.get('brand') === '1';
   const sort = params.get('sort') || 'relevance';
 
   let items, corrected = null, title;
@@ -24,10 +25,11 @@ export function renderSearch(el, params) {
     title = `Results for “${esc(q)}”`;
   } else {
     items = [...PRODUCTS];
-    title = cat ? getCategory(cat).name : uk ? 'Arrives in 2–4 days' : max ? `Under £${max}` : 'All products';
+    title = cat ? getCategory(cat).name : brand ? 'Big Brands' : uk ? 'Arrives in 2–4 days' : max ? `Under £${max}` : 'All products';
   }
   if (cat) items = items.filter((p) => p.category === cat);
   if (uk) items = items.filter((p) => p.warehouse === 'UK');
+  if (brand) items = items.filter((p) => p.official);
   if (max) items = items.filter((p) => p.price <= max);
   const sorters = {
     sales: (a, b) => b.sold - a.sold,
@@ -56,6 +58,7 @@ export function renderSearch(el, params) {
       ${CATEGORIES.map((c) => `<a class="${cat === c.id ? 'on' : ''}" href="${link({ cat: c.id })}">${c.name}</a>`).join('')}
     </div>
     <div class="filter-right">
+      <a class="toggle ${brand ? 'on' : ''}" href="${link({ brand: brand ? null : '1' })}"><span class="dot"></span>Big brands</a>
       <a class="toggle ${uk ? 'on' : ''}" href="${link({ uk: uk ? null : '1' })}"><span class="dot"></span>UK warehouse only</a>
       <select id="sort" aria-label="Sort">
         ${Object.entries(SORTS).map(([k, v]) => `<option value="${k}" ${k === sort ? 'selected' : ''}>${v}</option>`).join('')}

@@ -1,35 +1,71 @@
-// Product detail page: key facts, fit check, delivery check, specs, reviews, PK entry points
+// Product detail page: key facts (category-aware), delivery check, fit check, specs, reviews, PK entry points
 import { PRODUCTS } from '../../data/products.js';
 import { getReviews, starBreakdown } from '../reviews.js';
 import {
-  $, $$, esc, money, pctOff, stars, fmtCount, productArt, productCard, getProduct, getCategory,
+  $, $$, esc, money, pctOff, stars, fmtCount, productArt, productCard, getProduct, getCategory, aspectLabels,
   deliveryWindow, deliveryText, fmtDate, dimsText, store, toast,
 } from '../utils.js';
 import { addToPK, addToBasket } from '../app.js';
+import { currentUser, placeOrder } from '../auth.js';
 
 const PLUG = {
   UK: { ok: true, text: 'UK 3-pin plug', sub: 'Works in UK sockets — no adapter needed' },
   EU: { ok: false, text: 'European 2-pin plug', sub: 'You will need a UK travel adapter (about £3)' },
-  USB: { ok: true, text: 'USB powered', sub: 'Use any USB port or USB plug' },
+  USB: { ok: true, text: 'USB powered / charged', sub: 'Use any USB port or USB plug' },
 };
+const FIT_ROOM = ['home', 'kitchen', 'travel', 'sports'];
 
+// "Before you buy" — the facts that most often cause a wrong purchase, per category
 function keyFacts(p) {
   const rows = [];
-  if (PLUG[p.plug]) rows.push({ ...PLUG[p.plug], icon: 'plug' });
-  if (p.voltage) rows.push({ ok: true, text: `${p.voltage} · ${p.power}`, sub: 'UK mains is 230V' });
-  if (p.plug !== 'None') {
+  if (p.category === 'fashion' && p.fit) {
+    const ok = /true to size/i.test(p.fit);
+    rows.push({ ok, text: `Fit: ${p.fit}`, sub: `${p.aspects.size}% of buyers say it fits as expected` });
+  }
+  if (p.care) rows.push({ ok: true, text: p.care, sub: p.material });
+  if (p.category === 'food') {
+    const none = /none/i.test(p.allergens);
+    rows.push({ ok: none, text: none ? 'No major allergens' : `Contains: ${p.allergens}`, sub: 'Check the label if you have allergies' });
+    rows.push({ ok: true, text: `Best before: ${p.bestBefore}`, sub: `${p.netWeight} · ${p.storage}` });
+  }
+  if (p.category === 'beauty' && p.skinType) {
+    rows.push({ ok: true, text: p.skinType, sub: `${p.volume}${p.crueltyFree ? ' · Cruelty-free' : ''}` });
+  }
+  if (PLUG[p.plug]) rows.push(PLUG[p.plug]);
+  if (p.plug === 'UK' || p.plug === 'EU' || (p.plug === 'USB' && p.safety.length)) {
     const ukca = p.safety.includes('UKCA');
     rows.push({ ok: ukca, text: ukca ? 'UKCA marked' : 'CE marked only', sub: ukca ? 'Meets UK product safety marking' : 'EU marking — not UKCA marked' });
   } else if (p.safety.length) {
-    rows.push({ ok: true, text: p.safety.join(' · '), sub: 'Certified materials' });
+    rows.push({ ok: true, text: p.safety.join(' · '), sub: 'Certified' });
   }
   if (p.sizeNote) rows.push({ ok: false, text: 'Check the size', sub: p.sizeNote });
+  if (p.official) rows.push({ ok: true, text: `Sold by ${p.brand} official store`, sub: 'Genuine product, manufacturer warranty' });
   rows.push({
     ok: p.returns.free,
     text: p.returns.free ? `Free returns within ${p.returns.days} days` : `Returns cost extra · ${p.returns.days} days`,
     sub: p.returns.method,
   });
   return rows.map((r) => `<li class="${r.ok ? 'ok' : 'warn'}"><span class="fact-dot">${r.ok ? '✓' : '!'}</span><div><strong>${esc(r.text)}</strong><span>${esc(r.sub)}</span></div></li>`).join('');
+}
+
+function specRows(p, cat) {
+  const rows = [
+    ['Category', `${cat.name}${p.sub ? ' › ' + p.sub : ''}`],
+    p.brand && ['Brand', p.brand],
+    p.sizes && ['Sizes', p.sizes.join(', ')],
+    p.dims && ['Dimensions', `${dimsText(p.dims)} (${dimsText(p.dims, 'in')})`],
+    p.netWeight && ['Net weight', p.netWeight],
+    p.volume && ['Volume', p.volume],
+    p.weight !== '—' && ['Weight', p.weight],
+    p.material !== '—' && [p.category === 'food' ? 'Details' : p.category === 'beauty' ? 'Key ingredients' : 'Material', p.material],
+    p.allergens && ['Allergens', p.allergens],
+    p.power && ['Power', `${p.voltage} · ${p.power}`],
+    p.plug !== 'None' && ['Plug', PLUG[p.plug].text],
+    p.safety.length && ['Certification', p.safety.join(', ')],
+    p.colors.length && ['Colours', p.colors.join(', ')],
+    ['Ships from', p.warehouse === 'UK' ? 'UK warehouse' : 'China'],
+  ].filter(Boolean);
+  return rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
 }
 
 function reviewItem(r) {
@@ -49,17 +85,21 @@ export function renderProduct(el, id) {
   const p = getProduct(id);
   if (!p) { el.innerHTML = '<div class="empty card"><h3>Product not found</h3><a href="#/">Back to Today</a></div>'; return; }
   const cat = getCategory(p.category);
-
-  // remember for recommendations
   store.set('viewed', [p.id, ...store.get('viewed', []).filter((x) => x !== p.id)].slice(0, 8));
 
   const reviews = getReviews(p);
   const breakdown = starBreakdown(p);
-  const similar = PRODUCTS.filter((x) => x.category === p.category && x.id !== p.id);
-  const rivals = similar.slice().sort((a, b) => Math.abs(a.price - p.price) - Math.abs(b.price - p.price)).slice(0, 2);
+  const labels = aspectLabels(p);
+  const sameSub = PRODUCTS.filter((x) => x.id !== p.id && x.sub === p.sub && x.category === p.category);
+  const similar = [...sameSub, ...PRODUCTS.filter((x) => x.id !== p.id && x.category === p.category && !sameSub.includes(x))];
+  const shared = (x) => x.tags.filter((t) => p.tags.includes(t)).length;
+  const rivals = sameSub.length
+    ? sameSub.slice().sort((a, b) => Math.abs(a.price - p.price) - Math.abs(b.price - p.price)).slice(0, 2)
+    : similar.slice().sort((a, b) => shared(b) - shared(a) || Math.abs(a.price - p.price) - Math.abs(b.price - p.price)).slice(0, 2);
   const tagSet = [...new Set(reviews.flatMap((r) => r.tags))];
   const win = deliveryWindow(p);
   const defaultNeedBy = new Date(); defaultNeedBy.setDate(defaultNeedBy.getDate() + 7);
+  const showFit = p.dims && FIT_ROOM.includes(p.category);
   let unit = 'cm';
 
   el.innerHTML = `
@@ -68,16 +108,18 @@ export function renderProduct(el, id) {
   <section class="pd-top">
     ${productArt(p, 'pd-art')}
     <div class="pd-info">
-      <p class="eyebrow">${esc(p.seller)}</p>
+      <p class="eyebrow">${esc(p.seller)}${p.official ? ' <span class="official">Official</span>' : ''}</p>
       <h1>${esc(p.name)}</h1>
       <button class="pd-rating link-btn" id="to-reviews">${stars(p.rating, 14)} <strong>${p.rating}</strong> <span class="muted">${fmtCount(p.reviews)} ratings · ${fmtCount(p.sold)} sold</span></button>
       <div class="pd-price"><span class="now">${money(p.price)}</span><s>${money(p.was)}</s><span class="off">−${pctOff(p)}%</span></div>
       <p class="muted">Price includes VAT. Delivery ${p.warehouse === 'UK' ? 'free over £15' : '£1.99, free over £20'}.</p>
-      ${p.colors.length > 1 ? `<div class="swatches">${p.colors.map((c, i) => `<button class="swatch ${i === 0 ? 'on' : ''}">${esc(c)}</button>`).join('')}</div>` : ''}
+      ${p.colors.length > 1 ? `<p class="opt-label">Colour</p><div class="swatches" data-group="colour">${p.colors.map((c, i) => `<button class="swatch ${i === 0 ? 'on' : ''}">${esc(c)}</button>`).join('')}</div>` : ''}
+      ${p.sizes ? `<p class="opt-label">Size <span class="muted">· ${esc(p.fit)}</span></p><div class="swatches" data-group="size">${p.sizes.map((s) => `<button class="swatch">${esc(s)}</button>`).join('')}</div>` : ''}
       <p class="pd-desc">${esc(p.desc)}</p>
       <div class="pd-actions">
-        <button class="pill pill-blue" id="add-basket">Add to basket</button>
-        <button class="pill pill-grey" id="add-pk">+ PK compare</button>
+        <button class="pill pill-blue" id="buy-now">Buy now</button>
+        <button class="pill pill-grey" id="add-basket">Add to basket</button>
+        <button class="pill pill-grey" id="add-pk">+ PK</button>
       </div>
     </div>
   </section>
@@ -98,7 +140,7 @@ export function renderProduct(el, id) {
       <div id="need-result" class="result"></div>
     </div>
 
-    ${p.dims ? `<div class="card panel">
+    ${showFit ? `<div class="card panel">
       <h3>Will it fit?</h3>
       <div class="dims-row"><span class="big" id="dims">${dimsText(p.dims)}</span>
         <div class="seg small"><button data-unit="cm" class="on">cm</button><button data-unit="in">in</button></div></div>
@@ -112,17 +154,7 @@ export function renderProduct(el, id) {
 
   <section class="card specs">
     <h3>Specifications</h3>
-    <dl>
-      <dt>Category</dt><dd>${cat.name}</dd>
-      <dt>Dimensions</dt><dd>${dimsText(p.dims)} (${dimsText(p.dims, 'in')})</dd>
-      <dt>Weight</dt><dd>${p.weight}</dd>
-      <dt>Material</dt><dd>${esc(p.material)}</dd>
-      ${p.power ? `<dt>Power</dt><dd>${p.voltage} · ${p.power}</dd>` : ''}
-      <dt>Plug</dt><dd>${p.plug === 'None' ? 'Not electrical' : PLUG[p.plug].text}</dd>
-      <dt>Certification</dt><dd>${p.safety.join(', ') || '—'}</dd>
-      <dt>Colours</dt><dd>${p.colors.join(', ')}</dd>
-      <dt>Ships from</dt><dd>${p.warehouse === 'UK' ? 'UK warehouse' : 'China'}</dd>
-    </dl>
+    <dl>${specRows(p, cat)}</dl>
   </section>
 
   ${rivals.length ? `<section class="card pk-teaser">
@@ -141,8 +173,8 @@ export function renderProduct(el, id) {
       <div class="bars">${breakdown.map((v, i) => `<div class="bar-row"><span>${5 - i}★</span><div class="bar"><i style="width:${v}%"></i></div></div>`).join('')}
         <p class="muted">${fmtCount(p.reviews)} ratings</p></div>
       <div class="aspects">
-        ${[['size', 'Size as described'], ['photo', 'Looks like the photos'], ['quality', 'Good quality']].map(([k, label]) => `
-          <div class="aspect"><div class="ring" style="--v:${p.aspects[k]}"><span>${p.aspects[k]}%</span></div><span>${label}</span></div>`).join('')}
+        ${['size', 'photo', 'quality'].map((k) => `
+          <div class="aspect"><div class="ring" style="--v:${p.aspects[k]}"><span>${p.aspects[k]}%</span></div><span>${labels[k]}</span></div>`).join('')}
       </div>
     </div>
     <div class="chips" id="review-filters">
@@ -157,7 +189,7 @@ export function renderProduct(el, id) {
 
   <section class="shelf">
     <div class="shelf-head"><h2>You might also like</h2></div>
-    <div class="shelf-row">${similar.map((x) => productCard(x)).join('')}</div>
+    <div class="shelf-row">${similar.slice(0, 10).map((x) => productCard(x)).join('')}</div>
   </section>
   `;
 
@@ -165,9 +197,22 @@ export function renderProduct(el, id) {
   $('#to-reviews', el).onclick = () => $('#reviews', el).scrollIntoView({ behavior: 'smooth' });
   $('#add-basket', el).onclick = () => addToBasket(p.id);
   $('#add-pk', el).onclick = () => addToPK(p.id);
-  $$('.swatch', el).forEach((b) => (b.onclick = () => { $$('.swatch', el).forEach((x) => x.classList.remove('on')); b.classList.add('on'); }));
+  $('#buy-now', el).onclick = () => {
+    if (p.sizes && !$('[data-group="size"] .on', el)) return toast('Please choose a size first');
+    if (!currentUser()) { document.dispatchEvent(new CustomEvent('open-signin')); return toast('Sign in to place your order'); }
+    const order = placeOrder([p.id]);
+    toast(`Order ${order.id} placed — see Account`);
+  };
+  $$('.swatches', el).forEach((group) => $$('.swatch', group).forEach((b) => (b.onclick = () => {
+    $$('.swatch', group).forEach((x) => x.classList.remove('on'));
+    b.classList.add('on');
+  })));
 
   const needInput = $('#need-by', el);
+  const ukAlternative = () => {
+    const alt = similar.find((x) => x.warehouse === 'UK');
+    return alt ? `<a class="alt" href="#/product/${alt.id}">Faster option: ${esc(alt.name)} · ${money(alt.price)} · 2–4 days →</a>` : '';
+  };
   const checkNeed = () => {
     const need = new Date(needInput.value + 'T23:59');
     const box = $('#need-result', el);
@@ -176,14 +221,10 @@ export function renderProduct(el, id) {
     else if (win.earliest <= need) box.innerHTML = `<span class="warn">! Might arrive late — could be as late as ${fmtDate(win.latest)}</span>${ukAlternative()}`;
     else box.innerHTML = `<span class="bad">✕ Won’t arrive in time — earliest ${fmtDate(win.earliest)}</span>${ukAlternative()}`;
   };
-  const ukAlternative = () => {
-    const alt = similar.find((x) => x.warehouse === 'UK');
-    return alt ? `<a class="alt" href="#/product/${alt.id}">Faster option: ${esc(alt.name)} · ${money(alt.price)} · 2–4 days →</a>` : '';
-  };
   needInput.addEventListener('input', checkNeed);
   checkNeed();
 
-  if (p.dims) {
+  if (showFit) {
     const conv = (v) => (unit === 'in' ? v * 2.54 : v);
     const checkFit = () => {
       const space = ['#fw', '#fd', '#fh'].map((s) => parseFloat($(s, el).value));
