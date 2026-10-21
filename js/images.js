@@ -4,6 +4,17 @@
 import { CATEGORIES } from '../data/products.js';
 import { BLUEPRINTS } from '../data/variants.js';
 import { draw, makeCtx, hex, shade } from './art.js';
+import { PHOTO_MANIFEST } from '../img/manifest.js';
+
+// Photos registered in img/manifest.js (shared by a base product and its similar listings)
+const photosFor = (p) => PHOTO_MANIFEST[p.base || p.id];
+function realProductImages(p) {
+  const m = photosFor(p);
+  if (!m?.product?.length) return null;
+  const colorShot = m.colors?.[p.colors?.[0]];
+  return colorShot ? [colorShot, ...m.product.filter((x) => x !== colorShot)] : m.product;
+}
+const hashNum = (s) => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 const FONT = `-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif`;
 const X = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -217,6 +228,8 @@ function optionsImage(p) {
 const CACHE = new Map();
 export function productImages(p) {
   if (p.images?.length) return p.images;
+  const real = realProductImages(p);
+  if (real) return real;
   if (CACHE.has(p.id)) return CACHE.get(p.id);
   const color = productColor(p);
   const list = [mainImage(p, color), pointsImage(p, color), specImage(p, color), sceneImage(p, color), optionsImage(p)].map(uri);
@@ -227,6 +240,8 @@ export function productImages(p) {
 const MAIN = new Map();
 export function mainImageUri(p) {
   if (p.images?.length) return p.images[0];
+  const real = realProductImages(p);
+  if (real) return real[0];
   if (CACHE.has(p.id)) return CACHE.get(p.id)[0];
   if (!MAIN.has(p.id)) MAIN.set(p.id, uri(mainImage(p, productColor(p))));
   return MAIN.get(p.id);
@@ -234,6 +249,8 @@ export function mainImageUri(p) {
 // Clean product shot without text (for small tiles and carousel)
 const CUT = new Map();
 export function cutoutUri(p) {
+  const real = realProductImages(p);
+  if (real) return real[0];
   if (!CUT.has(p.id)) {
     const ctx = makeCtx('k');
     const c = cat(p);
@@ -253,6 +270,12 @@ const SURFACES = [
 ];
 const SURFACE_BY_CAT = { fashion: [0, 3, 5], food: [1, 2, 4], home: [0, 3, 5], kitchen: [1, 2], electronics: [4, 1, 0], beauty: [2, 0], sports: [3, 5], travel: [5, 3, 0] };
 export function buyerPhotos(p, review, count) {
+  const m = photosFor(p);
+  if (m?.reviews?.[review.id]?.length) return m.reviews[review.id];
+  if (m?.buyer?.length) {
+    const start = hashNum(p.id + review.id) % m.buyer.length;
+    return Array.from({ length: Math.min(count, m.buyer.length) }, (_, k) => m.buyer[(start + k) % m.buyer.length]);
+  }
   return Array.from({ length: count }, (_, k) => {
     const key = `${p.id}|${review.id}|${k}`;
     if (CACHE.has(key)) return CACHE.get(key);

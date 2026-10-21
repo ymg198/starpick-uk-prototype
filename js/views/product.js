@@ -95,7 +95,8 @@ export function renderProduct(el, id) {
   const reviews = getReviews(p);
   const images = productImages(p);
   const photoReviews = reviews.filter((r) => r.photo);
-  const allPhotos = photoReviews.flatMap((r) => buyerPhotos(p, r, photoCount(r)).map((src) => ({ src, r })));
+  const allPhotos = photoReviews.flatMap((r) => buyerPhotos(p, r, photoCount(r)).map((src) => ({ src, r })))
+    .filter((x, i, a) => a.findIndex((y) => y.src === x.src) === i); // no duplicates when real photos are shared
   const breakdown = starBreakdown(p);
   const labels = aspectLabels(p);
   // Other listings of the same product come first, then the same sub-category

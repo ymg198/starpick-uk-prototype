@@ -36,7 +36,9 @@ css/style.css       全部样式；颜色变量在 :root，含深色模式
 data/products.js    41 个基础商品、分类、手写评价、热搜词、演示账号 ← 改数据主要改这里
 data/variants.js    每个商品对应的插画类型 + 生成同款其他店铺商品（每个基础商品 9 个，共 410 个）
 js/art.js           41 种商品矢量插画（按颜色变化）
-js/images.js        商家图（5 张模板）和买家秀照片生成
+js/images.js        商家图（5 张模板）和买家秀照片生成；优先使用 img/manifest.js 登记的实拍图
+img/manifest.js     实拍图 / AI 生成图登记清单（目前为空）
+docs/chatgpt-photo-prompt.md  让 ChatGPT 生成商品图与买家秀的提示词
 js/auth.js          登录状态、下单、购买记录
 js/app.js           路由、搜索联想、PK 栏、购物袋计数
 js/search.js        关键词索引（同义词、纠错、联想）
@@ -54,7 +56,7 @@ js/views/account.js 个人中心
 - **加商品**：在 `data/products.js` 的 `PRODUCTS` 里复制一个 `make({...})`，改一个新的 `id`。`category` 必须是 `CATEGORIES` 里的 id；`warehouse: 'UK' | 'CN'` 决定配送时效；`brand` + `official: true` 表示大牌官方店；`weekSold` 是本周销量，决定能否进入今日精选。
 - **改演示账号或历史订单**：修改 `DEMO_USER.orders`，“猜你喜欢”会随之变化。
 - **品牌说明**：所有品牌（Kestrun、Norhaven、Sonaro、Aurevia、Velora、Pulsewave 等）和店铺名都是虚构的，图片中也没有任何真实 logo。新增商品时请继续使用虚构品牌，避免侵权。
-- **换成自己拍的图片**：给商品加上 `images: ['img/xxx-1.jpg', …]`，就会用这些图片代替自动生成的商家图。
+- **接入实拍图 / AI 生成图**：把图片放进 `img/products/<商品ID>/`（5 张商品图）和 `img/reviews/<商品ID>/`（买家秀），再在 `img/manifest.js` 里登记路径即可，无需改代码；同款商品自动共用基础商品的图片，未登记的商品继续显示插画。可直接使用 `docs/chatgpt-photo-prompt.md` 里的提示词让 ChatGPT 生成并接入。
 - **调整同款商品数量**：`data/products.js` 末尾的 `generateVariants(BASE_PRODUCTS)` 可以传第二个参数，例如 `generateVariants(BASE_PRODUCTS, 5)`。
 - **加手写评价**：在 `CUSTOM_REVIEWS` 里按商品 id 添加。
 - **改主页的推荐逻辑或合集**：修改 `js/views/home.js` 里的 `todaysPicks()`（今日精选）、`guessYouLike()`（猜你喜欢）和 `COLLECTIONS`。
