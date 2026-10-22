@@ -1,0 +1,319 @@
+// Sample catalogue for the StarPick UK prototype.
+// All products, brands, prices and reviews are made up for demo purposes.
+// To add a product: add a make({...}) entry below with a unique `id`, and a blueprint in data/variants.js
+// (which drawing to use + words for generating similar listings).
+import { generateVariants } from './variants.js';
+
+export const CATEGORIES = [
+  { id: 'fashion',     name: 'Fashion',          icon: 'shirt',      colors: ['#ff8fb1', '#c2185b'] },
+  { id: 'food',        name: 'Food & Drink',     icon: 'coffee',     colors: ['#ffc46b', '#e8772e'] },
+  { id: 'home',        name: 'Home',             icon: 'house',      colors: ['#6dd5c4', '#2f9e8f'] },
+  { id: 'kitchen',     name: 'Kitchen',          icon: 'pot',        colors: ['#ff8a8a', '#e0475b'] },
+  { id: 'electronics', name: 'Electronics',      icon: 'headphones', colors: ['#6ec6ff', '#2f6fed'] },
+  { id: 'beauty',      name: 'Beauty',           icon: 'bottle',     colors: ['#e7a5ff', '#9b4dca'] },
+  { id: 'sports',      name: 'Sports & Outdoors', icon: 'dumbbell',  colors: ['#9be15d', '#2e9e4f'] },
+  { id: 'travel',      name: 'Travel & Auto',    icon: 'suitcase',   colors: ['#8e9eff', '#4b4fd6'] },
+];
+
+// What the three review "aspect" scores mean in each category
+export const ASPECT_LABELS = {
+  default:     { size: 'Size as described', photo: 'Looks like the photos', quality: 'Good quality' },
+  fashion:     { size: 'Fits as expected', photo: 'Looks like the photos', quality: 'Good quality' },
+  food:        { size: 'Tastes great', photo: 'As described', quality: 'Fresh on arrival' },
+  beauty:      { size: 'Works as promised', photo: 'As described', quality: 'Gentle on skin' },
+  electronics: { size: 'Works as described', photo: 'Looks like the photos', quality: 'Build quality' },
+};
+
+const RETURNS = {
+  UK: { free: true, days: 30, method: 'Drop off at Evri or InPost locker' },
+  CN: { free: false, days: 15, method: 'Return to seller warehouse, £3.99 label' },
+  CN_SMALL: { free: true, days: 15, method: 'Refund only — keep the item (under £10)' },
+  FOOD: { free: true, days: 14, method: 'Unopened items only — or refund if damaged' },
+};
+
+// Fills in sensible defaults so each product only lists what matters
+function make(p) {
+  const small = p.price < 10;
+  return {
+    plug: 'None', safety: [], dims: null, colors: [], tags: [], weight: '—', material: '—',
+    returns: p.warehouse === 'UK' ? RETURNS.UK : small ? RETURNS.CN_SMALL : RETURNS.CN,
+    aspects: { size: 90, photo: 88, quality: 85 },
+    weekSold: Math.round(p.sold / 11),
+    ...p,
+  };
+}
+
+// Fields
+// warehouse: 'UK' (2–4 days) | 'CN' (7–14 days, direct from China)
+// brand + official: true → sold by the brand's official store ("Big brand")
+// sub: sub-category used for "similar items" and PK suggestions
+// plug: 'UK' | 'EU' | 'USB' | 'None';  dims: [W, D, H] cm
+// fashion: sizes, fit, care · food: netWeight, bestBefore, allergens, storage · beauty: volume, skinType, crueltyFree
+const BASE_PRODUCTS = [
+  // ================= Fashion =================
+  make({ id: 'f1', category: 'fashion', sub: 'Shoes', icon: 'shoe', name: 'Kestrun AirFlow Running Trainers', brand: 'Kestrun', official: true,
+    seller: 'Kestrun Official Store', price: 64.99, was: 89.99, rating: 4.8, reviews: 5210, sold: 41000, weekSold: 3100, warehouse: 'UK',
+    sizes: ['UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11'], fit: 'True to size', care: 'Wipe clean', material: 'Engineered mesh, foam midsole',
+    colors: ['Black', 'White', 'Volt'], tags: ['running shoes', 'trainers', 'sneakers', 'gym', 'mens', 'womens'],
+    aspects: { size: 95, photo: 94, quality: 93 }, desc: 'Lightweight daily trainer with responsive cushioning. Free returns on all sizes.', featured: true }),
+  make({ id: 'f2', category: 'fashion', sub: 'Coats & Jackets', icon: 'coat', name: 'Norhaven Packable Down Jacket', brand: 'Norhaven', official: true,
+    seller: 'Norhaven Official Store', price: 79.0, was: 129.0, rating: 4.7, reviews: 1840, sold: 15200, weekSold: 1800, warehouse: 'UK',
+    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'], fit: 'Runs small — size up', care: 'Machine wash 30°C', material: '90/10 down, recycled nylon',
+    colors: ['Black', 'Navy', 'Olive'], tags: ['down jacket', 'puffer', 'coat', 'winter', 'warm'],
+    aspects: { size: 82, photo: 93, quality: 92 }, desc: 'Packs into its own pocket. Warm to around −5°C.' }),
+  make({ id: 'f3', category: 'fashion', sub: 'Knitwear', icon: 'shirt', name: 'Merino Wool Crew Jumper',
+    seller: 'Woollen Lane', price: 24.99, was: 39.99, rating: 4.5, reviews: 1320, sold: 21000, weekSold: 2400, warehouse: 'CN',
+    sizes: ['S', 'M', 'L', 'XL'], fit: 'True to size', care: 'Hand wash cold', material: '100% merino wool',
+    colors: ['Oatmeal', 'Charcoal', 'Forest'], tags: ['jumper', 'sweater', 'knitwear', 'wool', 'winter'],
+    aspects: { size: 88, photo: 86, quality: 84 }, desc: 'Soft fine-gauge merino. Breathable and itch-free.' }),
+  make({ id: 'f4', category: 'fashion', sub: 'T-shirts', icon: 'shirt', name: 'Everyday Cotton Tee (3-pack)',
+    seller: 'Basics Studio', price: 14.99, was: 24.99, rating: 4.4, reviews: 4100, sold: 58000, weekSold: 5200, warehouse: 'CN',
+    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'], fit: 'Runs large — consider sizing down', care: 'Machine wash 40°C', material: '100% combed cotton, 180 gsm',
+    colors: ['White', 'Black', 'Grey marl'], tags: ['t shirt', 'tee', 'basics', 'cotton', 'mens', 'womens'],
+    aspects: { size: 79, photo: 87, quality: 83 }, desc: 'Heavyweight basics that keep their shape wash after wash.' }),
+  make({ id: 'f5', category: 'fashion', sub: 'Bags', icon: 'bag', name: 'Maison Ardel Leather Tote', brand: 'Maison Ardel', official: true,
+    seller: 'Maison Ardel Official Store', price: 59.0, was: 95.0, rating: 4.9, reviews: 760, sold: 6400, weekSold: 600, warehouse: 'UK',
+    dims: [38, 14, 30], material: 'Full-grain leather', care: 'Leather balm', colors: ['Tan', 'Black'],
+    tags: ['tote bag', 'handbag', 'leather bag', 'work bag', 'gift'],
+    aspects: { size: 96, photo: 95, quality: 96 }, desc: 'Fits a 14" laptop. Hand-finished edges, inner zip pocket.', featured: true }),
+  make({ id: 'f6', category: 'fashion', sub: 'Activewear', icon: 'shirt', name: 'Thermal Leggings (2-pack)',
+    seller: 'Basics Studio', price: 12.99, was: 19.99, rating: 4.3, reviews: 980, sold: 9800, warehouse: 'CN',
+    sizes: ['XS', 'S', 'M', 'L', 'XL'], fit: 'True to size', care: 'Machine wash 30°C', material: 'Brushed polyester, elastane',
+    colors: ['Black'], tags: ['leggings', 'thermal', 'base layer', 'womens', 'winter'],
+    aspects: { size: 86, photo: 84, quality: 80 }, desc: 'Fleece-lined for cold commutes and winter walks.' }),
+
+  // ================= Food & Drink =================
+  make({ id: 'd1', category: 'food', sub: 'Coffee & Tea', icon: 'coffee', name: 'Single-Origin Coffee Beans 1 kg',
+    seller: 'Roast & Co', price: 16.99, was: 22.99, rating: 4.8, reviews: 3020, sold: 36000, weekSold: 4300, warehouse: 'UK',
+    netWeight: '1 kg', bestBefore: '9 months from roasting', allergens: 'None', storage: 'Cool, dry place',
+    tags: ['coffee', 'coffee beans', 'espresso', 'arabica', 'gift'], material: '100% Arabica, Colombia',
+    returns: RETURNS.FOOD, aspects: { size: 95, photo: 94, quality: 93 }, desc: 'Notes of chocolate and caramel. Roasted in the UK each week.', featured: true }),
+  make({ id: 'd2', category: 'food', sub: 'Chocolate & Sweets', icon: 'gift', name: 'Belgian Chocolate Selection Box 500 g',
+    seller: 'Chocolatier Maison', price: 11.99, was: 18.0, rating: 4.9, reviews: 2210, sold: 24000, weekSold: 3800, warehouse: 'UK',
+    netWeight: '500 g', bestBefore: '6 months', allergens: 'Milk, soy, hazelnuts', storage: 'Below 18°C',
+    tags: ['chocolate', 'chocolates', 'gift', 'christmas', 'sweets'], material: '42 assorted pralines',
+    returns: RETURNS.FOOD, aspects: { size: 97, photo: 93, quality: 95 }, desc: 'A gift-boxed assortment of 42 pralines and truffles.' }),
+  make({ id: 'd3', category: 'food', sub: 'Coffee & Tea', icon: 'cup', name: 'Ceremonial Matcha Powder 100 g',
+    seller: 'Leaf & Whisk', price: 9.99, was: 15.99, rating: 4.6, reviews: 870, sold: 7300, warehouse: 'CN',
+    netWeight: '100 g', bestBefore: '12 months', allergens: 'None', storage: 'Refrigerate after opening',
+    tags: ['matcha', 'green tea', 'tea', 'latte'], material: 'Stone-ground, Uji (Japan)',
+    returns: RETURNS.FOOD, aspects: { size: 91, photo: 90, quality: 88 }, desc: 'Bright green, smooth and not bitter. Makes about 50 cups.' }),
+  make({ id: 'd4', category: 'food', sub: 'Snacks', icon: 'leaf', name: 'Mixed Nuts & Dried Fruit 1 kg',
+    seller: 'Pantry Market', price: 12.49, was: 16.99, rating: 4.5, reviews: 1430, sold: 19500, weekSold: 2700, warehouse: 'UK',
+    netWeight: '1 kg', bestBefore: '8 months', allergens: 'Almonds, cashews, walnuts', storage: 'Reseal after opening',
+    tags: ['nuts', 'trail mix', 'snacks', 'healthy', 'dried fruit'], material: 'Unsalted, no added sugar',
+    returns: RETURNS.FOOD, aspects: { size: 90, photo: 89, quality: 88 }, desc: 'Resealable pouch of unsalted nuts with raisins and cranberries.' }),
+  make({ id: 'd5', category: 'food', sub: 'Snacks', icon: 'bowl', name: 'Asian Instant Noodle Variety Box (12)',
+    seller: 'Pantry Market', price: 13.99, was: 19.99, rating: 4.6, reviews: 2560, sold: 30000, weekSold: 3300, warehouse: 'UK',
+    netWeight: '12 × 120 g', bestBefore: '10 months', allergens: 'Wheat, soy, sesame', storage: 'Cool, dry place',
+    tags: ['instant noodles', 'ramen', 'noodles', 'snacks', 'spicy'], material: '6 flavours from Korea, Japan and Thailand',
+    returns: RETURNS.FOOD, aspects: { size: 92, photo: 87, quality: 90 }, desc: 'Six flavours, two of each — from mild miso to fire chicken.' }),
+
+  // ================= Home =================
+  make({ id: 'l1', category: 'home', sub: 'Lighting', icon: 'lamp', name: 'Lumi Bedside Touch Lamp',
+    seller: 'Lumi Home Official', price: 14.99, was: 24.99, rating: 4.7, reviews: 1284, sold: 9200, warehouse: 'UK',
+    plug: 'UK', voltage: '230V', power: '5W LED', safety: ['UKCA', 'CE'], dims: [12, 12, 28], weight: '0.6 kg', material: 'ABS base, linen shade',
+    colors: ['Oat', 'Charcoal', 'Sage'], tags: ['bedside lamp', 'touch lamp', 'dimmable', 'warm light', 'guest room'],
+    aspects: { size: 94, photo: 91, quality: 88 }, desc: '3-level touch dimming with a warm 2700K glow. UK 3-pin plug, no adapter needed.' }),
+  make({ id: 'l2', category: 'home', sub: 'Lighting', icon: 'lamp', name: 'Arc Minimal Desk Lamp',
+    seller: 'Arc Lighting Store', price: 11.49, was: 19.99, rating: 4.3, reviews: 642, sold: 4100, warehouse: 'CN',
+    plug: 'EU', voltage: '220–240V', power: '8W LED', safety: ['CE'], dims: [15, 15, 42], weight: '0.9 kg', material: 'Aluminium',
+    colors: ['Black', 'White'], tags: ['desk lamp', 'reading lamp', 'study', 'adjustable'],
+    aspects: { size: 86, photo: 79, quality: 81 }, desc: 'Adjustable arm with 5 colour temperatures. Ships with a European 2-pin plug.' }),
+  make({ id: 'l3', category: 'home', sub: 'Lighting', icon: 'lamp', name: 'Glow LED Strip Lights 5 m',
+    seller: 'Brightway', price: 9.49, was: 15.99, rating: 4.4, reviews: 2210, sold: 15800, warehouse: 'CN',
+    plug: 'USB', voltage: '5V USB', power: '6W', safety: ['CE'], dims: [500, 1, 0.2], weight: '0.2 kg', material: 'Silicone-coated LED',
+    colors: ['RGB'], tags: ['led strip', 'fairy lights', 'mood lighting', 'bedroom', 'rgb', 'christmas lights'],
+    aspects: { size: 92, photo: 84, quality: 80 }, desc: 'App and remote control, music sync. Powered by any USB port.' }),
+  make({ id: 's1', category: 'home', sub: 'Storage', icon: 'box', name: 'Under-Bed Storage Bags (2-pack)',
+    seller: 'TidyNest', price: 12.99, was: 19.99, rating: 4.6, reviews: 3120, sold: 22000, warehouse: 'UK',
+    dims: [100, 50, 15], weight: '1.1 kg', material: 'Non-woven fabric, clear window', colors: ['Grey', 'Beige'],
+    tags: ['under bed storage', 'storage bag', 'duvet storage', 'clothes storage'],
+    aspects: { size: 95, photo: 92, quality: 87 }, desc: 'Fits beds with 16 cm clearance or more. Reinforced handles, zip lid.' }),
+  make({ id: 's2', category: 'home', sub: 'Storage', icon: 'box', name: 'Slim Under-Bed Box with Wheels',
+    seller: 'HomeCube', price: 16.49, was: 22.99, rating: 4.2, reviews: 805, sold: 5300, warehouse: 'CN',
+    dims: [80, 45, 18], weight: '1.6 kg', material: 'PP plastic', colors: ['Clear'],
+    tags: ['under bed storage', 'storage box', 'wheels', 'plastic box'],
+    aspects: { size: 78, photo: 83, quality: 80 }, desc: 'Rolling under-bed box with lid. Needs at least 19 cm under your bed.' }),
+  make({ id: 's3', category: 'home', sub: 'Storage', icon: 'box', name: 'Foldable Fabric Cubes (6-pack)',
+    seller: 'TidyNest', price: 15.99, was: 21.99, rating: 4.7, reviews: 1980, sold: 12500, warehouse: 'UK',
+    dims: [30, 30, 30], weight: '1.4 kg', material: 'Fabric, cardboard base', colors: ['Grey', 'Navy', 'Cream'],
+    tags: ['storage cubes', 'storage box', 'shelf box', 'toy storage'],
+    aspects: { size: 96, photo: 93, quality: 86 }, desc: '30 cm cubes that fit standard cube shelving units.' }),
+  make({ id: 'b1', category: 'home', sub: 'Bedding', icon: 'bed', name: 'Microfibre Duvet 10.5 Tog — Double',
+    seller: 'SleepWell UK', price: 21.99, was: 34.99, rating: 4.6, reviews: 2890, sold: 18300, warehouse: 'UK',
+    safety: ['OEKO-TEX'], dims: [200, 200, 3], weight: '1.9 kg', material: 'Microfibre, hollowfibre fill', colors: ['White'],
+    tags: ['duvet', 'quilt', 'double duvet', 'winter', 'guest room'],
+    aspects: { size: 96, photo: 92, quality: 88 }, desc: 'UK double size (200 × 200 cm). Machine washable.' }),
+  make({ id: 'b2', category: 'home', sub: 'Bedding', icon: 'bed', name: 'Cotton Bedding Set — King',
+    seller: 'Dreamy Textiles', price: 19.99, was: 32.99, rating: 4.0, reviews: 690, sold: 3500, warehouse: 'CN',
+    dims: [230, 220, 1], weight: '1.4 kg', material: '100% cotton, 200 thread count', colors: ['White', 'Sage', 'Blush'],
+    tags: ['bedding set', 'duvet cover', 'king', 'pillowcases', 'bed linen'], sizeNote: 'Sized to US king (230 × 220 cm), larger than UK king.',
+    aspects: { size: 68, photo: 80, quality: 79 }, desc: 'Duvet cover 230 × 220 cm (US king) with two pillowcases.' }),
+  make({ id: 'h1', category: 'home', sub: 'Bathroom', icon: 'drop', name: 'Quick-Dry Towel Set (6 pcs)',
+    seller: 'SoftLoop', price: 19.99, was: 29.99, rating: 4.6, reviews: 1460, sold: 9100, warehouse: 'UK',
+    safety: ['OEKO-TEX'], dims: [140, 70, 1], weight: '2.0 kg', material: '100% cotton, 550 gsm', colors: ['White', 'Grey', 'Sage'],
+    tags: ['towels', 'bath towel', 'hand towel', 'guest room'],
+    aspects: { size: 94, photo: 89, quality: 88 }, desc: '2 bath sheets, 2 hand towels, 2 face cloths.' }),
+  make({ id: 'h3', category: 'home', sub: 'Bathroom', icon: 'drop', name: 'Memory Foam Bath Mat',
+    seller: 'SoftLoop', price: 8.49, was: 12.99, rating: 4.5, reviews: 2030, sold: 13200, warehouse: 'CN',
+    dims: [80, 50, 1.5], weight: '0.6 kg', material: 'Velvet top, non-slip base', colors: ['Grey', 'Cream', 'Navy'],
+    tags: ['bath mat', 'non slip', 'bathroom rug'],
+    aspects: { size: 92, photo: 86, quality: 83 }, desc: 'Super absorbent, machine washable at 30°C.' }),
+
+  // ================= Kitchen =================
+  make({ id: 'k1', category: 'kitchen', sub: 'Kettles', icon: 'kettle', name: 'Rapid Boil 1.7 L Electric Kettle',
+    seller: 'Kitchenly UK', price: 18.99, was: 29.99, rating: 4.7, reviews: 2470, sold: 16100, warehouse: 'UK',
+    plug: 'UK', voltage: '230V', power: '3000W', safety: ['UKCA', 'BS 1363 plug'], dims: [22, 15, 25], weight: '1.1 kg', material: 'Stainless steel',
+    colors: ['Silver', 'Matte Black'], tags: ['kettle', 'electric kettle', 'fast boil', 'tea'],
+    aspects: { size: 95, photo: 93, quality: 90 }, desc: '3 kW fast boil for UK sockets. Boil-dry protection, limescale filter.' }),
+  make({ id: 'k2', category: 'kitchen', sub: 'Kettles', icon: 'kettle', name: 'Glass Kettle with Blue LED 1.8 L',
+    seller: 'Brightway', price: 13.49, was: 21.99, rating: 4.1, reviews: 734, sold: 3900, warehouse: 'CN',
+    plug: 'EU', voltage: '220–240V', power: '2200W', safety: ['CE'], dims: [23, 16, 26], weight: '1.3 kg', material: 'Borosilicate glass',
+    colors: ['Clear'], tags: ['kettle', 'glass kettle', 'electric kettle', 'tea'], returns: { free: false, days: 15, method: 'Return to seller warehouse, £4.99 label' },
+    aspects: { size: 90, photo: 76, quality: 74 }, desc: 'Blue LED while boiling. Ships with a European plug.' }),
+  make({ id: 'k3', category: 'kitchen', sub: 'Cookware', icon: 'pot', name: 'Hearthly Non-stick Pan Set (3 pcs)', brand: 'Hearthly', official: true,
+    seller: 'Hearthly Official Store', price: 49.0, was: 79.0, rating: 4.8, reviews: 1890, sold: 10800, weekSold: 950, warehouse: 'UK',
+    safety: ['PFAS-free'], dims: [28, 28, 5], weight: '2.4 kg', material: 'Forged aluminium, ceramic coating', colors: ['Graphite', 'Sage'],
+    tags: ['frying pan', 'pan set', 'non stick', 'induction', 'cookware'],
+    aspects: { size: 95, photo: 94, quality: 94 }, desc: '20/24/28 cm pans for gas, electric and induction. 10-year guarantee.' }),
+  make({ id: 'k4', category: 'kitchen', sub: 'Storage', icon: 'box', name: 'Airtight Food Containers (10-pack)',
+    seller: 'FreshKeep', price: 13.99, was: 19.99, rating: 4.5, reviews: 1640, sold: 10400, warehouse: 'CN',
+    safety: ['BPA-free', 'Food-safe'], dims: [20, 14, 10], weight: '1.5 kg', material: 'BPA-free plastic, silicone seal', colors: ['Clear'],
+    tags: ['food containers', 'storage jars', 'meal prep', 'pantry'],
+    aspects: { size: 89, photo: 88, quality: 84 }, desc: 'Stackable, dishwasher-safe, with labels and a marker pen.' }),
+
+  // ================= Electronics =================
+  make({ id: 'e4', category: 'electronics', sub: 'Audio', icon: 'headphones', name: 'Sonaro ANC Wireless Headphones', brand: 'Sonaro', official: true,
+    seller: 'Sonaro Official Store', price: 89.0, was: 149.0, rating: 4.8, reviews: 3640, sold: 26000, weekSold: 2200, warehouse: 'UK',
+    plug: 'USB', voltage: 'USB-C charging', power: '40 h battery', safety: ['UKCA', 'CE'], weight: '0.25 kg', material: 'Aluminium, protein leather',
+    colors: ['Black', 'Silver', 'Midnight Blue'], tags: ['headphones', 'noise cancelling', 'wireless', 'bluetooth', 'gift'],
+    aspects: { size: 96, photo: 95, quality: 94 }, desc: 'Adaptive noise cancelling, 40-hour battery, multipoint Bluetooth 5.3.', featured: true }),
+  make({ id: 'e5', category: 'electronics', sub: 'Audio', icon: 'headphones', name: 'True Wireless Earbuds Pro',
+    seller: 'Voltix', price: 19.99, was: 39.99, rating: 4.4, reviews: 7820, sold: 72000, weekSold: 6100, warehouse: 'CN',
+    plug: 'USB', voltage: 'USB-C charging', power: '30 h with case', safety: ['UKCA', 'CE'], weight: '0.05 kg', material: 'ABS',
+    colors: ['White', 'Black'], tags: ['earbuds', 'earphones', 'wireless', 'bluetooth', 'airpods'],
+    aspects: { size: 90, photo: 88, quality: 82 }, desc: 'Bluetooth 5.3, IPX5 sweat-proof, touch controls.' }),
+  make({ id: 'e6', category: 'electronics', sub: 'Wearables', icon: 'watch', name: 'Fitness Smartwatch with Heart Rate',
+    seller: 'Voltix', price: 29.99, was: 49.99, rating: 4.3, reviews: 2150, sold: 18000, warehouse: 'CN',
+    plug: 'USB', voltage: 'Magnetic USB charger', power: '10-day battery', safety: ['CE'], weight: '0.04 kg', material: 'Aluminium, silicone strap',
+    colors: ['Black', 'Pink', 'Silver'], tags: ['smartwatch', 'fitness tracker', 'watch', 'running'],
+    aspects: { size: 88, photo: 85, quality: 80 }, desc: '100+ sport modes, sleep tracking, works with iPhone and Android.' }),
+  make({ id: 'e7', category: 'electronics', sub: 'Power & Charging', icon: 'battery', name: '10,000 mAh Slim Power Bank',
+    seller: 'PlugSafe UK', price: 15.99, was: 24.99, rating: 4.7, reviews: 2900, sold: 24000, warehouse: 'UK',
+    plug: 'USB', voltage: 'USB-C in/out', power: '20W PD', safety: ['UKCA', 'CE'], dims: [10, 6.5, 1.5], weight: '0.2 kg', material: 'Aluminium',
+    colors: ['Black', 'White'], tags: ['power bank', 'portable charger', 'battery', 'travel'],
+    aspects: { size: 95, photo: 93, quality: 90 }, desc: 'Charges a phone twice. Airline cabin safe.' }),
+  make({ id: 'e1', category: 'electronics', sub: 'Power & Charging', icon: 'plug', name: '4-Way Extension Lead with USB',
+    seller: 'PlugSafe UK', price: 12.99, was: 18.99, rating: 4.8, reviews: 3560, sold: 26400, warehouse: 'UK',
+    plug: 'UK', voltage: '230V', power: '13A / 3120W', safety: ['UKCA', 'BS 1363 plug', 'Surge protected'], dims: [30, 6, 4], weight: '0.5 kg', material: 'Fire-retardant PC',
+    colors: ['White'], tags: ['extension lead', 'power strip', 'usb charger', 'surge protector', 'multi plug'],
+    aspects: { size: 97, photo: 95, quality: 91 }, desc: '2 m cable, 4 UK sockets + 2 USB-A + 1 USB-C. Fused UK plug.' }),
+  make({ id: 'e3', category: 'electronics', sub: 'Power & Charging', icon: 'plug', name: '65W GaN USB-C Charger',
+    seller: 'Voltix', price: 17.99, was: 29.99, rating: 4.5, reviews: 1730, sold: 11000, warehouse: 'CN',
+    plug: 'UK', voltage: '100–240V', power: '65W', safety: ['UKCA', 'CE'], dims: [5, 3, 6], weight: '0.12 kg', material: 'PC',
+    colors: ['White', 'Black'], tags: ['usb c charger', 'gan charger', 'laptop charger', 'fast charger'],
+    returns: { free: true, days: 15, method: 'Drop off at Evri or InPost locker' },
+    aspects: { size: 95, photo: 91, quality: 86 }, desc: 'Charges a laptop and phone at once. Foldable UK pins.' }),
+
+  // ================= Beauty =================
+  make({ id: 'y1', category: 'beauty', sub: 'Skincare', icon: 'bottle', name: 'Aurevia Hyaluronic Hydrating Serum 30 ml', brand: 'Aurevia', official: true,
+    seller: 'Aurevia Official Store', price: 24.0, was: 38.0, rating: 4.9, reviews: 4280, sold: 31000, weekSold: 1500, warehouse: 'UK',
+    volume: '30 ml', skinType: 'All skin types, incl. sensitive', crueltyFree: true, material: 'Hyaluronic acid 2%, vitamin B5',
+    tags: ['serum', 'hyaluronic acid', 'skincare', 'moisturiser', 'gift'], returns: { free: true, days: 30, method: 'Unopened items, free drop-off' },
+    aspects: { size: 94, photo: 95, quality: 96 }, desc: 'Lightweight serum for plump, hydrated skin. Fragrance-free.', featured: true }),
+  make({ id: 'y2', category: 'beauty', sub: 'Skincare', icon: 'bottle', name: 'Daily SPF 50 Sunscreen 50 ml',
+    seller: 'Glowlab', price: 8.99, was: 14.99, rating: 4.5, reviews: 1960, sold: 17000, warehouse: 'CN',
+    volume: '50 ml', skinType: 'Normal to oily', crueltyFree: true, material: 'Broad spectrum UVA/UVB',
+    tags: ['sunscreen', 'spf', 'sun cream', 'skincare'], returns: { free: true, days: 15, method: 'Unopened items only' },
+    aspects: { size: 90, photo: 88, quality: 86 }, desc: 'No white cast, works under make-up.' }),
+  make({ id: 'y3', category: 'beauty', sub: 'Hair', icon: 'drop', name: 'Hot Air Styler Brush',
+    seller: 'Glowlab', price: 22.99, was: 39.99, rating: 4.4, reviews: 1210, sold: 9300, warehouse: 'CN',
+    plug: 'UK', voltage: '230V', power: '1000W', safety: ['UKCA', 'CE'], weight: '0.6 kg', material: 'Ceramic-coated barrel',
+    colors: ['Rose Gold', 'Black'], tags: ['hair dryer', 'hair brush', 'styler', 'blow dry'],
+    aspects: { size: 89, photo: 85, quality: 83 }, desc: 'Dries and styles in one step, 3 heat settings, UK plug.' }),
+
+  // ================= Sports & Outdoors =================
+  make({ id: 'p1', category: 'sports', sub: 'Yoga & Fitness', icon: 'dumbbell', name: 'Kestrun Pro Yoga Mat 6 mm', brand: 'Kestrun', official: true,
+    seller: 'Kestrun Official Store', price: 24.99, was: 39.99, rating: 4.8, reviews: 2120, sold: 17500, warehouse: 'UK',
+    dims: [183, 61, 0.6], weight: '1.2 kg', material: 'Natural rubber, PU top', colors: ['Black', 'Sage', 'Lilac'],
+    tags: ['yoga mat', 'exercise mat', 'pilates', 'gym', 'home workout'],
+    aspects: { size: 95, photo: 94, quality: 93 }, desc: 'Non-slip grip even when wet. Comes with a carry strap.' }),
+  make({ id: 'p2', category: 'sports', sub: 'Yoga & Fitness', icon: 'dumbbell', name: 'Adjustable Dumbbells 2 × 10 kg',
+    seller: 'IronCore', price: 39.99, was: 59.99, rating: 4.5, reviews: 980, sold: 8800, weekSold: 900, warehouse: 'CN',
+    dims: [38, 15, 15], weight: '20 kg', material: 'Cast iron, rubber coating', colors: ['Black'],
+    tags: ['dumbbells', 'weights', 'home gym', 'strength'], returns: { free: false, days: 15, method: 'Return to seller warehouse, £9.99 label' },
+    aspects: { size: 90, photo: 88, quality: 86 }, desc: 'Spin-lock plates from 2.5 kg to 10 kg per hand.' }),
+  make({ id: 'p3', category: 'sports', sub: 'Outdoor', icon: 'flask', name: 'Insulated Steel Water Bottle 750 ml',
+    seller: 'Trailmate', price: 11.99, was: 19.99, rating: 4.8, reviews: 4410, sold: 39000, weekSold: 4000, warehouse: 'UK',
+    dims: [8, 8, 27], weight: '0.35 kg', material: '18/8 stainless steel', safety: ['BPA-free'], colors: ['Black', 'Sage', 'Sky', 'Coral'],
+    tags: ['water bottle', 'flask', 'gym', 'hiking', 'reusable'],
+    aspects: { size: 96, photo: 94, quality: 93 }, desc: 'Cold for 24 h, hot for 12 h. Leak-proof lid.' }),
+
+  // ================= Travel & Auto =================
+  make({ id: 't1', category: 'travel', sub: 'Luggage', icon: 'suitcase', name: 'Hard-Shell Cabin Suitcase 55 cm',
+    seller: 'Jetset Luggage', price: 45.0, was: 69.0, rating: 4.7, reviews: 1650, sold: 12400, warehouse: 'UK',
+    dims: [55, 40, 20], weight: '2.6 kg', material: 'Polycarbonate, 4 spinner wheels', colors: ['Black', 'Silver', 'Navy'],
+    tags: ['suitcase', 'cabin bag', 'hand luggage', 'carry on', 'luggage'],
+    aspects: { size: 95, photo: 92, quality: 90 }, desc: '55 × 40 × 20 cm fits most airline cabin limits. TSA lock.' }),
+  make({ id: 't2', category: 'travel', sub: 'Car', icon: 'car', name: 'Magnetic Car Phone Mount',
+    seller: 'Voltix', price: 9.99, was: 15.99, rating: 4.4, reviews: 2340, sold: 21000, warehouse: 'CN',
+    dims: [7, 7, 9], weight: '0.1 kg', material: 'Aluminium, N52 magnets', colors: ['Black'],
+    tags: ['phone holder', 'car mount', 'magsafe', 'car accessories'],
+    aspects: { size: 91, photo: 87, quality: 83 }, desc: 'Clips to air vents. Works with magnetic phone cases.' }),
+  make({ id: 't3', category: 'travel', sub: 'Travel Accessories', icon: 'plug', name: 'Universal Travel Adapter (UK to EU/US)',
+    seller: 'PlugSafe UK', price: 7.99, was: 12.99, rating: 4.6, reviews: 3010, sold: 27000, warehouse: 'UK',
+    plug: 'UK', voltage: '100–250V', power: '2 USB-A + 1 USB-C', safety: ['UKCA', 'CE'], dims: [6, 5, 5], weight: '0.1 kg', material: 'PC',
+    colors: ['White'], tags: ['travel adapter', 'plug adapter', 'eu adapter', 'us adapter', 'travel'],
+    aspects: { size: 95, photo: 93, quality: 89 }, desc: 'One adapter for 150+ countries. Built-in fuse.' }),
+  make({ id: 't4', category: 'travel', sub: 'Travel Accessories', icon: 'box', name: 'Compression Packing Cubes (6-pack)',
+    seller: 'Jetset Luggage', price: 13.99, was: 21.99, rating: 4.6, reviews: 1270, sold: 10900, warehouse: 'UK',
+    dims: [40, 30, 10], weight: '0.5 kg', material: 'Ripstop nylon', colors: ['Grey', 'Navy'],
+    tags: ['packing cubes', 'travel organiser', 'luggage', 'travel'],
+    aspects: { size: 93, photo: 91, quality: 87 }, desc: 'Zip compression saves about 30% space in your case.' }),
+];
+
+// Base products first, then ~9 similar listings per product from other (fictional) sellers
+const FAMILYWISE_PRODUCTS = [
+  {id:'fw-air-sage',name:'Hearthly Everyday Air Fryer',brand:'Hearthly',price:79,was:99,rating:4.8,reviews:240,sold:1800,capacity:5.5,energy:{watts:1500,hours:.5,annualCare:8},stocks:{london:12,manchester:8,shenzhen:20},image:'sage',dims:[28,34,31],desc:'Weeknight favourites, a little less effort. A 5.5L family basket with simple controls and a removable, easy-clean tray.'},
+  {id:'fw-air-cream',name:'Hearthly Compact Air Fryer',brand:'Hearthly',price:59,was:75,rating:4.6,reviews:185,sold:1200,capacity:3.5,energy:{watts:1200,hours:.5,annualCare:6},stocks:{london:6,manchester:0,shenzhen:15},image:'cream',dims:[24,29,28],desc:'A small-space companion for one or two. A 3.5L basket and a compact footprint keep everyday cooking simple.'},
+  {id:'fw-air-dark',name:'Hearthly Family Plus Air Fryer',brand:'Hearthly',price:119,was:149,rating:4.7,reviews:320,sold:2100,capacity:7.5,energy:{watts:1800,hours:.5,annualCare:10},stocks:{london:9,manchester:5,shenzhen:24},image:'dark',dims:[33,38,34],desc:'More room around the table. A generous 7.5L basket for larger households, with a digital timer and crisp, even results.'},
+].map(p=>make({...p,category:'kitchen',sub:'Air fryers',icon:'pot',shape:'airfryer',official:true,seller:'Hearthly Official Store',warehouse:'UK',plug:'UK',safety:['UKCA'],colors:[p.image==='sage'?'Sage':p.image==='cream'?'Cream':'Charcoal'],tags:['family','cooking','air fryer'],power:p.energy.watts+' W',material:'Non-stick basket, polymer housing',weight:'4.5 kg',familywiseImage:true,images:['assets/airfryer-'+p.image+'.svg']}));
+export const PRODUCTS = [...BASE_PRODUCTS, ...generateVariants(BASE_PRODUCTS), ...FAMILYWISE_PRODUCTS];
+
+// Hand-written reviews for products with a "story" in the demo.
+// Other products get generated reviews (see js/reviews.js).
+export const CUSTOM_REVIEWS = {
+  l2: [
+    { name: 'Tom H.', town: 'Bristol', stars: 2, text: 'Nice lamp but it came with a European plug. Had to buy an adapter the same day.', tags: ['Plug issue'], photo: true },
+    { name: 'Aisha K.', town: 'Leeds', stars: 4, text: 'Bright and sturdy for the price. Took 11 days to arrive.', tags: ['Slow delivery'] },
+  ],
+  k2: [{ name: 'Gemma R.', town: 'Cardiff', stars: 2, text: 'EU plug and only 2200W, so it is slower than my old kettle. Looks nicer in the photos.', tags: ['Plug issue', 'Not as pictured'], photo: true }],
+  b2: [
+    { name: 'Hannah P.', town: 'Glasgow', stars: 2, text: 'Duvet cover is bigger than a UK king — it swims on my duvet. Check the size!', tags: ['Size mismatch'], photo: true },
+    { name: 'Chris D.', town: 'Norwich', stars: 3, text: 'Soft cotton, but the "king" is a US king.', tags: ['Size mismatch'] },
+  ],
+  s2: [{ name: 'Jess M.', town: 'Brighton', stars: 2, text: 'Did not fit under my bed — measure your clearance first, it needs 19 cm.', tags: ['Size mismatch'] }],
+  f2: [{ name: 'Laura B.', town: 'Edinburgh', stars: 4, text: 'Gorgeous and really warm, but size up — my usual M was tight over a jumper.', tags: ['Runs small'], photo: true }],
+  f4: [{ name: 'Mark T.', town: 'Leeds', stars: 3, text: 'Good thick cotton but they come up big. I swapped L for M.', tags: ['Runs large'] }],
+};
+
+export const HOT_KEYWORDS = ['running trainers', 'wireless earbuds', 'coffee beans', 'down jacket', 'chocolate', 'kettle', 'cabin suitcase', 'serum'];
+
+// Demo account used by every sign-in option in the prototype
+export const DEMO_USER = {
+  name: 'Emma Wilson',
+  email: 'emma.wilson@example.co.uk',
+  city: 'Manchester',
+  memberSince: 'March 2024',
+  tier: 'StarPick Plus',
+  points: 1240,
+  vouchers: 2,
+  orders: [
+    { id: 'SP-20481', date: '2026-10-12', status: 'Delivered', items: ['f1', 'p3'] },
+    { id: 'SP-19730', date: '2026-09-28', status: 'Delivered', items: ['d1'] },
+    { id: 'SP-18802', date: '2026-08-30', status: 'Delivered', items: ['e5'] },
+  ],
+  addresses: ['14 Oxford Road, Manchester M1 5QA'],
+  payment: ['PayPal · emma.wilson@…', 'Visa ending 4242'],
+};
