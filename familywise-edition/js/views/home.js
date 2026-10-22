@@ -31,35 +31,51 @@ export function todaysPicks() {
 const RELATED = { fashion: ['sports'], sports: ['fashion', 'electronics'], food: ['kitchen'], kitchen: ['food', 'home'], electronics: ['travel', 'sports'], travel: ['electronics'], beauty: ['fashion'], home: ['kitchen'] };
 const shortName = (p) => p.name.replace(/^(Kestrun|Norhaven|Sonaro|Aurevia|Maison Ardel|Hearthly)\s/, '').split(' ').slice(0, 3).join(' ');
 
-export function guessYouLike(user = currentUser()) {
+// One pick per slot, so the shelf mixes home, beauty, clothing, shoes, drinkware, food and more.
+// Each product appears once: similar listings of the same base product (f1, f1v1, f1v2 …) count as one.
+const GUESS_SLOTS = [
+  { id: 'home', match: (p) => p.category === 'home' },
+  { id: 'beauty', match: (p) => p.category === 'beauty' },
+  { id: 'clothing', match: (p) => p.category === 'fashion' && !['Shoes', 'Bags'].includes(p.sub) },
+  { id: 'shoes', match: (p) => p.sub === 'Shoes' },
+  { id: 'drinkware', match: (p) => p.tags.some((t) => /bottle|flask|mug|cup/.test(t)) },
+  { id: 'food', match: (p) => p.category === 'food' },
+  { id: 'electronics', match: (p) => p.category === 'electronics' },
+  { id: 'kitchen', match: (p) => p.category === 'kitchen' },
+  { id: 'sports', match: (p) => p.category === 'sports' && !p.tags.some((t) => /bottle|flask/.test(t)) },
+  { id: 'travel', match: (p) => p.category === 'travel' },
+];
+const baseOf = (p) => p.base || p.id;
+
+export function guessYouLike(user = currentUser(), limit = 10) {
   const bought = purchasedIds(user).map(getProduct).filter(Boolean);
-  if (bought.length) {
-    const boughtIds = new Set(bought.map((p) => p.id));
-    return PRODUCTS.filter((p) => !boughtIds.has(p.id)).map((p) => {
-      let best = null, bestScore = 0, total = 0;
-      for (const q of bought) {
-        let s = 0;
-        if (p.sub && p.sub === q.sub) s += 4;
-        else if (p.category === q.category) s += 2;
-        else if ((RELATED[q.category] || []).includes(p.category)) s += 1;
-        s += p.tags.filter((t) => q.tags.includes(t)).length * 1.5;
-        total += s;
-        if (s > bestScore) { bestScore = s; best = q; }
-      }
-      return { p, score: total + p.rating / 2, reason: best ? `You bought ${shortName(best)}` : null };
-    }).filter((x) => x.reason).sort((a, b) => b.score - a.score).slice(0, 10);
-  }
-  // New customer: alternate high-value top-rated picks with big-brand picks
-  const score = (p) => p.rating * 2 + pctOff(p) / 25 + Math.log10(p.reviews) / 2;
-  const pool = PRODUCTS.filter((p) => p.rating >= 4.5).sort((a, b) => score(b) - score(a));
-  const value = pool.filter((p) => !p.official).map((p) => ({ p, reason: pctOff(p) >= 40 ? 'Great value' : 'Top rated' }));
-  const brands = pool.filter((p) => p.official).map((p) => ({ p, reason: 'Big brand' }));
-  const mixed = [];
-  while (mixed.length < 10 && (value.length || brands.length)) {
-    if (value.length) mixed.push(value.shift());
-    if (brands.length && mixed.length < 10) mixed.push(brands.shift());
-  }
-  return mixed;
+  const boughtIds = new Set(bought.map((p) => p.id));
+  const boughtBases = new Set(bought.map(baseOf)); // owned products, from any shop: used only if a slot has nothing else
+  const value = (p) => p.rating * 2 + pctOff(p) / 25 + Math.log10(p.reviews) / 2;
+  const scored = PRODUCTS.filter((p) => !boughtIds.has(p.id)).map((p) => {
+    // Returning customer: similarity to what they bought (e.g. trainers → sportswear), plus overall value
+    let best = null, bestScore = 0;
+    for (const q of bought) {
+      let s = 0;
+      if (p.sub && p.sub === q.sub) s += 4;
+      else if (p.category === q.category) s += 2;
+      else if ((RELATED[q.category] || []).includes(p.category)) s += 1;
+      s += p.tags.filter((t) => q.tags.includes(t)).length * 1.5;
+      if (s > bestScore) { bestScore = s; best = q; }
+    }
+    const reason = boughtBases.has(baseOf(p)) ? `Like your ${shortName(best)}` : bestScore >= 2 ? `You bought ${shortName(best)}` : p.official ? 'Big brand' : pctOff(p) >= 40 ? 'Great value' : 'Top rated';
+    return { p, score: value(p) + bestScore, reason };
+  }).sort((a, b) => b.score - a.score);
+
+  const picked = [], usedBase = new Set();
+  const take = (slot, allowOwned) => {
+    const fits = (x) => slot.match(x.p) && !usedBase.has(baseOf(x.p));
+    const x = scored.find((x) => fits(x) && !boughtBases.has(baseOf(x.p))) || (allowOwned && scored.find(fits));
+    if (x) { picked.push(x); usedBase.add(baseOf(x.p)); }
+  };
+  // First round: one per slot; then a second round (still one per product) if there is room
+  for (const round of [1, 2]) for (const slot of GUESS_SLOTS) if (picked.length < limit) take(slot, round === 1);
+  return picked;
 }
 
 const COLLECTIONS = [
