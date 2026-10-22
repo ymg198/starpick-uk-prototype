@@ -68,6 +68,34 @@ const COLLECTIONS = [
   { title: 'Pantry favourites', sub: 'Coffee, snacks and treats, delivered in 2–4 days', ids: ['d1', 'd5', 'd4', 'd3'], colors: ['#8a4b12', '#e08a2e'] },
 ];
 
+// ---------- Family picks: one air fryer for the cost comparison, then one pick per other category ----------
+export function familyPicks(profile) {
+  const rank = (p) => familyScore(p, profile).score + Math.log10(p.reviews) * 2;
+  const fryer = PRODUCTS.filter((p) => p.familywiseImage).sort((a, b) => rank(b) - rank(a))[0];
+  const perCat = CATEGORIES.filter((c) => c.id !== fryer.category).map((c) =>
+    PRODUCTS.filter((p) => p.category === c.id && !p.variant).sort((a, b) => rank(b) - rank(a))[0]);
+  return [fryer, ...perCat.sort((a, b) => rank(b) - rank(a)).slice(0, 5)];
+}
+
+// ---------- Shop by moment: scenario shelves, defaulting to the one that fits right now ----------
+export const MOMENTS = [
+  { id: 'workout', title: 'Morning workout', sub: 'Kit for an early run or a home session', ids: ['f1', 'p1', 'e6', 'p3', 'f6', 'p2', 'e5', 'd4'] },
+  { id: 'wfh', title: 'Work from home', sub: 'A calmer, better-lit desk day', ids: ['l2', 'e3', 'e4', 'd1', 'e1', 'k1', 's3', 'k4'] },
+  { id: 'away', title: 'Weekend away', sub: 'Pack light, stay charged', ids: ['t1', 't4', 't3', 'e7', 'y2', 'e5', 'f2', 't2'] },
+  { id: 'cosy', title: 'Cosy night in', sub: 'Warm layers, soft light and a treat', ids: ['f3', 'd2', 'l3', 'b1', 'e4', 'd3', 'l1', 'd5'] },
+  { id: 'hosting', title: 'Friends round for dinner', sub: 'Cook, serve and make up the guest room', ids: ['fw-air-sage', 'k3', 'd1', 'd4', 'k4', 'h1', 'b2', 'l3'] },
+  { id: 'gifting', title: 'Christmas gifting', sub: 'Presents across every budget', ids: ['d2', 'e4', 'y1', 'f5', 'd1', 'p3', 'e6', 'l3'] },
+];
+export function momentFor(date = new Date()) {
+  const h = date.getHours(), day = date.getDay(), month = date.getMonth();
+  if (month >= 10) return { id: 'gifting', why: 'Christmas is coming' };
+  if (day === 5 && h >= 15 || day === 6 && h < 12) return { id: 'away', why: 'It’s nearly the weekend' };
+  if (h >= 5 && h < 10) return { id: 'workout', why: 'Good morning' };
+  if (day >= 1 && day <= 5 && h >= 10 && h < 17) return { id: 'wfh', why: 'Weekday, working hours' };
+  if (h >= 17 && (day === 5 || day === 6)) return { id: 'hosting', why: 'Weekend evening' };
+  return { id: 'cosy', why: 'Evening at home' };
+}
+
 export function renderHome(el) {
   const user = currentUser();
   const picks = todaysPicks();
@@ -76,12 +104,19 @@ export function renderHome(el) {
   const isReturning = purchasedIds(user).length > 0;
 
   const profile=store.get('family',null);
-  const familyPicks=PRODUCTS.filter(p=>p.familywiseImage).sort((a,b)=>familyScore(b,profile).score-familyScore(a,profile).score);
+  const family=familyPicks(profile);
+  const now=momentFor();
   el.innerHTML = `
   <section class="fw-hero"><div class="hero-copy"><p class="eyebrow">A little wiser. A little more you.</p><h1>Make every<br>purchase <em>count.</em></h1><p>Good things for your home.<br>Thoughtful choices for your family.</p><div class="button-row"><a class="pill pill-blue" href="#/search">Find your everyday favourites <span>↗</span></a><button class="hero-how link-btn" id="hero-how">How it works</button></div><div class="hero-trust"><span>◎ Consider the whole cost</span><span>⌂ Choose a closer warehouse</span></div></div><div class="hero-photo"><img src="assets/home-living.jpg" alt="A calm, sunlit living room with natural colours"><div class="hero-caption"><span class="caption-icon">✳</span><span>A home that feels like you.<small>Shop a little more thoughtfully.</small></span></div></div></section>
   <section class="family-intro"><div><p class="eyebrow">YOUR HOME, YOUR WAY</p><h2>Thoughtful picks for your family</h2></div><button class="pill pill-grey" id="home-family">${profile?profile.people+' people · Edit preferences':'Personalise your picks ↗'}</button></section>
-  <div class="family-grid">${familyPicks.map(p=>productCard(p,{reason:profile?familyScore(p,profile).reasons[0]:'Ownership cost available'})).join('')}</div>
-  <div class="family-compare-link"><a class="link-btn" href="#/compare?ids=fw-air-sage,fw-air-cream,fw-air-dark">Compare all three, beyond the price tag →</a></div>
+  <div class="family-grid">${family.map(p=>productCard(p,{reason:profile?familyScore(p,profile).reasons[0]:p.familywiseImage?'Ownership cost available':getCategory(p.category).name})).join('')}</div>
+  <div class="family-compare-link"><a class="link-btn" href="#/compare?ids=fw-air-sage,fw-air-cream,fw-air-dark">Compare all three air fryers, beyond the price tag →</a></div>
+  <section class="moments" id="moments">
+    <div class="shelf-head"><div><p class="eyebrow" id="moment-why">Suggested now · ${now.why}</p><h2>Shop by moment</h2></div></div>
+    <div class="seg moment-tabs" role="tablist">${MOMENTS.map(m=>`<button role="tab" data-m="${m.id}" class="${m.id===now.id?'on':''}" aria-selected="${m.id===now.id}">${m.title}</button>`).join('')}</div>
+    <p class="muted moment-sub" id="moment-sub"></p>
+    <div class="shelf-row" id="moment-row"></div>
+  </section>
   <div class="section-kicker"><h2>Find your everyday</h2><a class="link-btn" href="#/search">All 413 products ↗</a></div>
   <section class="cat-grid">
     ${CATEGORIES.map(c=>`<a class="cat-tile card" href="#/search?cat=${c.id}"><span class="cat-icon" style="background:linear-gradient(135deg, ${c.colors[0]}, ${c.colors[1]})">${categoryIcon(c)}</span><span>${c.name}</span></a>`).join('')}
@@ -141,6 +176,13 @@ export function renderHome(el) {
   </details>`;
 
   $('#home-family',el).onclick=openFamily;
+  const showMoment=(id)=>{const m=MOMENTS.find(x=>x.id===id);
+    $$('.moment-tabs button',el).forEach(b=>{b.classList.toggle('on',b.dataset.m===id);b.setAttribute('aria-selected',b.dataset.m===id);});
+    $('#moment-why',el).textContent=id===now.id?`Suggested now · ${now.why}`:'Scenario';
+    $('#moment-sub',el).textContent=m.sub;
+    $('#moment-row',el).innerHTML=m.ids.map(getProduct).filter(Boolean).map(p=>productCard(p,{reason:m.title})).join('');};
+  $$('.moment-tabs button',el).forEach(b=>b.onclick=()=>showMoment(b.dataset.m));
+  showMoment(now.id);
   $('#hero-how',el).onclick=()=>showDialog('A thoughtful choice, in three steps','<ol class="how-steps"><li><strong>Find your fit.</strong><p>Browse StarPick’s catalogue or add optional household preferences.</p></li><li><strong>Look beyond the price.</strong><p>Compare eligible appliances with an editable ownership-cost estimate.</p></li><li><strong>Choose the journey.</strong><p>Pick a warehouse, place a demo order and follow each parcel.</p></li></ol>');
   // ---- carousel behaviour: arrows, dots, swipe (scroll-snap), autoplay ----
   const track = $('#carousel', el);

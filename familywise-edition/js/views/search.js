@@ -39,12 +39,16 @@ export function renderSearch(el, params) {
   };
   if (sorters[sort]) items = [...items].sort(sorters[sort]);
 
-  // Every search shows at least 10 products: top up with related items from the same categories
+  // Every search shows at least MIN_RESULTS products: top up with related items —
+  // same category first, then shared tags, then best sellers
+  const MIN_RESULTS = 24;
   let related = [];
-  if (q && items.length < 10) {
+  if (q && items.length < MIN_RESULTS) {
     const cats = new Set(items.map((p) => p.category));
-    const pool = PRODUCTS.filter((p) => !items.includes(p) && (cats.size ? cats.has(p.category) : true)).sort((a, b) => b.weekSold - a.weekSold);
-    related = pool.slice(0, Math.max(10 - items.length, cats.size ? 6 : 12));
+    const tags = new Set(items.flatMap((p) => p.tags));
+    const rel = (p) => (cats.has(p.category) ? 10 : 0) + p.tags.filter((t) => tags.has(t)).length * 3 + Math.log10(p.weekSold + 1);
+    const pool = PRODUCTS.filter((p) => !items.includes(p) && (!cat || p.category === cat)).sort((a, b) => rel(b) - rel(a));
+    related = pool.slice(0, Math.max(MIN_RESULTS - items.length, 12));
   }
 
   const link = (patch) => {
