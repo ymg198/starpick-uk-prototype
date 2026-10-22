@@ -53,6 +53,7 @@ js/views/account.js 个人中心
 
 ## 常见修改
 
+- 商品图与买家秀为 ChatGPT 生成的 AI 模拟图片，不含真实品牌；已接入的商品见 `img/manifest.js`。
 - **加商品**：在 `data/products.js` 的 `PRODUCTS` 里复制一个 `make({...})`，改一个新的 `id`。`category` 必须是 `CATEGORIES` 里的 id；`warehouse: 'UK' | 'CN'` 决定配送时效；`brand` + `official: true` 表示大牌官方店；`weekSold` 是本周销量，决定能否进入今日精选。
 - **改演示账号或历史订单**：修改 `DEMO_USER.orders`，“猜你喜欢”会随之变化。
 - **品牌说明**：所有品牌（Kestrun、Norhaven、Sonaro、Aurevia、Velora、Pulsewave 等）和店铺名都是虚构的，图片中也没有任何真实 logo。新增商品时请继续使用虚构品牌，避免侵权。
