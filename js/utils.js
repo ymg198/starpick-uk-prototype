@@ -1,3 +1,4 @@
+import {shipping,stock,defaultWarehouse} from './domain.js';
 import { CATEGORIES, PRODUCTS, ASPECT_LABELS } from '../data/products.js';
 import { mainImageUri, cutoutUri } from './images.js';
 
@@ -17,7 +18,8 @@ export const aspectLabels = (p) => ASPECT_LABELS[p.category] || ASPECT_LABELS.de
 // ---------- Delivery ----------
 const WINDOWS = { UK: [2, 4], CN: [7, 14] };
 export function deliveryWindow(p, from = new Date()) {
-  const [a, b] = WINDOWS[p.warehouse];
+  const selected=store.get('warehouses',{})[p.id];
+  const [a,b]=shipping(p,stock(p,selected)>0?selected:defaultWarehouse(p),store.get('destination','manchester')).days;
   const add = (d) => { const x = new Date(from); x.setDate(x.getDate() + d); return x; };
   return { earliest: add(a), latest: add(b), days: [a, b] };
 }
@@ -86,10 +88,10 @@ export const categoryIcon = (c) => icon(c.icon);
 // ---------- Safe localStorage ----------
 export const store = {
   get(key, fallback) {
-    try { const v = localStorage.getItem('starpick:' + key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+    try { const v = localStorage.getItem('starpick-familywise-v1:' + key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
   },
   set(key, value) {
-    try { localStorage.setItem('starpick:' + key, JSON.stringify(value)); } catch { /* ignore */ }
+    try { localStorage.setItem('starpick-familywise-v1:' + key, JSON.stringify(value)); } catch { /* ignore */ }
   },
 };
 
@@ -104,15 +106,16 @@ export function toast(msg) {
 
 // ---------- Product card (shared) ----------
 export function productCard(p, opts = {}) {
+  const saved=store.get('warehouses',{})[p.id];const quote=shipping(p,stock(p,saved)>0?saved:defaultWarehouse(p),store.get('destination','manchester'));
   return `<a class="card product-card" href="#/product/${p.id}">
-    <img class="card-img" src="${mainImageUri(p)}" alt="${esc(p.name)}" loading="lazy" decoding="async">
+    <img class="card-img" src="${cutoutUri(p)}" alt="${esc(p.name)}" loading="lazy" decoding="async">
     <div class="pc-body">
       ${p.official ? `<div class="pc-brand">${esc(p.brand)} <span class="official">Official</span></div>` : ''}
       <div class="pc-name">${esc(p.name)}</div>
       <div class="pc-meta">${stars(p.rating, 11)} <span>${p.rating} · ${fmtCount(p.sold)} sold</span></div>
       <div class="pc-price"><strong>${money(p.price)}</strong> <s>${money(p.was)}</s></div>
       <div class="pc-badges">
-        ${p.warehouse === 'UK' ? '<span class="badge badge-green">UK · 2–4 days</span>' : '<span class="badge">From China · 7–14 days</span>'}
+        <span class="badge ${quote.warehouse.country==='UK'?'badge-green':''}">${quote.warehouse.country==='UK'?'UK':'From China'} · ${quote.days.join('–')} days</span>
         ${opts.reason ? `<span class="badge badge-blue">${esc(opts.reason)}</span>` : ''}
       </div>
     </div>

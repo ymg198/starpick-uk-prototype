@@ -299,7 +299,12 @@ const BASE_PRODUCTS = [
 ];
 
 // Base products first, then ~9 similar listings per product from other (fictional) sellers
-export const PRODUCTS = [...BASE_PRODUCTS, ...generateVariants(BASE_PRODUCTS)];
+const FAMILYWISE_PRODUCTS = [
+  {id:'fw-air-sage',name:'Hearthly Everyday Air Fryer',brand:'Hearthly',price:79,was:99,rating:4.8,reviews:240,sold:1800,capacity:5.5,energy:{watts:1500,hours:.5,annualCare:8},stocks:{london:12,manchester:8,shenzhen:20},image:'sage',dims:[28,34,31],desc:'Weeknight favourites, a little less effort. A 5.5L family basket with simple controls and a removable, easy-clean tray.'},
+  {id:'fw-air-cream',name:'Hearthly Compact Air Fryer',brand:'Hearthly',price:59,was:75,rating:4.6,reviews:185,sold:1200,capacity:3.5,energy:{watts:1200,hours:.5,annualCare:6},stocks:{london:6,manchester:0,shenzhen:15},image:'cream',dims:[24,29,28],desc:'A small-space companion for one or two. A 3.5L basket and a compact footprint keep everyday cooking simple.'},
+  {id:'fw-air-dark',name:'Hearthly Family Plus Air Fryer',brand:'Hearthly',price:119,was:149,rating:4.7,reviews:320,sold:2100,capacity:7.5,energy:{watts:1800,hours:.5,annualCare:10},stocks:{london:9,manchester:5,shenzhen:24},image:'dark',dims:[33,38,34],desc:'More room around the table. A generous 7.5L basket for larger households, with a digital timer and crisp, even results.'},
+].map(p=>make({...p,category:'kitchen',sub:'Air fryers',icon:'pot',shape:'airfryer',official:true,seller:'Hearthly Official Store',warehouse:'UK',plug:'UK',safety:['UKCA'],colors:[p.image==='sage'?'Sage':p.image==='cream'?'Cream':'Charcoal'],tags:['family','cooking','air fryer'],power:p.energy.watts+' W',material:'Non-stick basket, polymer housing',weight:'4.5 kg',familywiseImage:true,images:['assets/airfryer-'+p.image+'.svg']}));
+export const PRODUCTS = [...BASE_PRODUCTS, ...generateVariants(BASE_PRODUCTS), ...FAMILYWISE_PRODUCTS];
 
 // Hand-written reviews for products with a "story" in the demo.
 // Other products get generated reviews (see js/reviews.js).

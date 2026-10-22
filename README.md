@@ -1,86 +1,55 @@
-# StarPick（星选购）英国站：交互原型
+# StarPick × FamilyWise · Integrated V1.1
 
-星辰创选 case 的网页原型。目标市场是英国，核心是帮用户在低价跨境平台上**买得对、到得及时、退得起**。
+小组整合版：基于 StarPick UK 原型的商品与交互，保留 FamilyWise 的暖白、鼠尾草绿、留白和按需展开设计。
 
-全品类商城：服饰、食品饮料、家居、厨房、数码电器、美妆、运动户外、出行，共 460 个商品。界面为英文，设计风格参考 Apple App Store。所有商品、品牌、店铺、价格、评价和图片均为自编示例，**不使用任何真实品牌**。
+## 网址与目录
 
-## 本地运行
+- 整合版就是网站首页，代码在仓库根目录：<https://ymg198.github.io/starpick-uk-prototype/>
+- 原版 StarPick 保留在 `classic/`：<https://ymg198.github.io/starpick-uk-prototype/classic/>，两边页脚可互相跳转。
+- 两个版本共用根目录的商品照片 `img/`（照片清单 `img/manifest.js`）。
+- 浏览器存储使用独立前缀 `starpick-familywise-v1:`，不与原版数据混用。
 
-项目是纯静态网页，没有构建步骤，但使用了 ES Modules，所以需要用本地服务器打开，不能直接双击 `index.html`：
+## 本地打开
 
-```bash
-# 任选一种
-python3 -m http.server 8000
-npx serve .
-```
-
-然后打开 http://localhost:8000 。VS Code 用户也可以安装 Live Server 插件，右键 `index.html` → Open with Live Server。
-
-## 功能与页面
-
-| 页面 | 路由 | 内容 |
-| --- | --- | --- |
-| 推荐页（主页） | `#/` | **Today's Picks（今日精选）** 轮播，最多 5 页：本周销量前 3 + 评分最高 2 件，可自动播放、左右切换、手机滑动；8 个品类入口；**Guess You Like（猜你喜欢）**：登录后按历史订单推荐相关商品，新客户推荐高性价比高评分商品与大牌商品交替；Big Brands 大牌官方店；场景合集；UK 仓 2–4 天达；£10 以下 |
-| 登录 / 个人中心 | 右上角头像 · `#/account` | 未登录点头像弹出登录（Apple / Google / 邮箱，原型中都登录到演示账号 Emma）；登录后点头像进入个人中心：资料、订单（再次购买、写评价）、积分优惠券、地址支付、退出登录 |
-| 关键词搜索 | `#/search?q=…` | **每个关键词至少 10 个结果**（不足时补充同品类相关商品，完全无匹配时显示热门商品）；顶栏搜索联想（含高亮）、最近搜索、热搜榜；倒排索引 + 英美同义词（comforter→duvet）+ 前缀匹配 + 1 个字母的拼写纠错（ketle→kettle）；分类、UK 仓、排序筛选 |
-| 商品详情 | `#/product/:id` | 价格与折扣、颜色、尺码；Buy now 下单（需登录，订单会进入个人中心并影响“猜你喜欢”）；**Before you buy 关键事实卡**，按品类显示不同信息：服饰显示版型偏大/偏小，食品显示过敏原和保质期，美妆显示适用肤质，电器显示插头和 UKCA/CE，大牌显示官方店保障；**配送日期检查**（输入“需要日期”，判断能否按时到达，并推荐更快的替代品）；**Will it fit? 尺寸核对**（cm/in 切换）；规格表 |
-| 商家图 | 详情页顶部图集 | 每个商品 5 张：主图（卖点标题 + 到手价条）、卖点图、尺码/规格/成分图、场景图、颜色款式图或包装清单图；可左右滑动、点缩略图切换、点击放大 |
-| 评价展示 / 买家秀 | 详情页下半部分 | 评分分布、三项口碑指标、**Customer photos 买家秀**一栏（可点开大图浏览），带图评价附 1–3 张买家照片；筛选（有图、5 星、差评、按标签） |
-| 竞品 PK | `#/compare?ids=a,b,c` | 最多 3 件商品对比，逐行高亮胜出项；顶部给出“最便宜 / 评分最高 / 最快到 / 最少意外”结论；详情页可一键 PK 同类商品，底部浮动 PK 栏 |
-
-## 目录结构
-
-```
-index.html          页面骨架（顶栏、主视图、PK 浮动栏）
-css/style.css       全部样式；颜色变量在 :root，含深色模式
-data/products.js    41 个基础商品、分类、手写评价、热搜词、演示账号 ← 改数据主要改这里
-data/variants.js    每个商品对应的插画类型 + 生成同款其他店铺商品（每个基础商品 9 个，共 460 个）
-js/art.js           41 种商品矢量插画（按颜色变化）
-js/images.js        商家图（5 张模板）和买家秀照片生成；优先使用 img/manifest.js 登记的实拍图
-img/manifest.js     实拍图 / AI 生成图登记清单（目前为空）
-docs/chatgpt-photo-prompt.md  让 ChatGPT 生成商品图与买家秀的提示词
-js/auth.js          登录状态、下单、购买记录
-js/app.js           路由、搜索联想、PK 栏、购物袋计数
-js/search.js        关键词索引（同义词、纠错、联想）
-js/reviews.js       评价生成与星级分布
-js/utils.js         通用函数：价格、日期、星星、商品图标、商品卡片
-js/views/home.js    推荐页
-js/views/search.js  搜索与分类结果页
-js/views/product.js 商品详情 + 评价
-js/views/compare.js 竞品 PK
-js/views/account.js 个人中心
-```
-
-## 常见修改
-
-- 商品图与买家秀为 ChatGPT 生成的 AI 模拟图片，不含真实品牌；已接入的商品见 `img/manifest.js`。
-- **加商品**：在 `data/products.js` 的 `PRODUCTS` 里复制一个 `make({...})`，改一个新的 `id`。`category` 必须是 `CATEGORIES` 里的 id；`warehouse: 'UK' | 'CN'` 决定配送时效；`brand` + `official: true` 表示大牌官方店；`weekSold` 是本周销量，决定能否进入今日精选。
-- **改演示账号或历史订单**：修改 `DEMO_USER.orders`，“猜你喜欢”会随之变化。
-- **品牌说明**：所有品牌（Kestrun、Norhaven、Sonaro、Aurevia、Velora、Pulsewave 等）和店铺名都是虚构的，图片中也没有任何真实 logo。新增商品时请继续使用虚构品牌，避免侵权。
-- **接入实拍图 / AI 生成图**：把图片放进 `img/products/<商品ID>/`（5 张商品图）和 `img/reviews/<商品ID>/`（买家秀），再在 `img/manifest.js` 里登记路径即可，无需改代码；同款商品自动共用基础商品的图片，未登记的商品继续显示插画。可直接使用 `docs/chatgpt-photo-prompt.md` 里的提示词让 ChatGPT 生成并接入。
-- **调整同款商品数量**：`data/products.js` 末尾的 `generateVariants(BASE_PRODUCTS)` 可以传第二个参数，例如 `generateVariants(BASE_PRODUCTS, 5)`。
-- **加手写评价**：在 `CUSTOM_REVIEWS` 里按商品 id 添加。
-- **改主页的推荐逻辑或合集**：修改 `js/views/home.js` 里的 `todaysPicks()`（今日精选）、`guessYouLike()`（猜你喜欢）和 `COLLECTIONS`。
-- **改主题色**：修改 `css/style.css` 顶部的 `--blue` 等变量。
-
-## 演示脚本（约 3 分钟）
-
-1. 首页 **Today's Picks**：轮播展示本周销量冠军（耳机、T 恤、咖啡豆）和评分最高的商品（精华、巧克力）。
-2. 未登录时，“Guess You Like”是给新客户的高性价比 + 大牌交替推荐。点右上角头像 → Continue with Apple 登录。
-3. 登录后，“Guess You Like”变成按历史订单推荐（跑鞋 → 运动商品，咖啡豆 → 其他饮品），每张卡片标注 “You bought …”。
-4. 打开 **Norhaven Packable Down Jacket**：左右滑动 5 张商家图，点开看大图；关键事实卡提示“偏小，建议大一码”；不选尺码点 Buy now 会提示先选尺码。往下看 Customer photos 买家秀。
-5. 点 “PK it” 和其他冬装对比（或从 PK 页加到 3 件）：价格、版型、配送、退货逐行高亮胜出项。
-6. 打开 **Arc Minimal Desk Lamp**：提示欧标插头、只有 CE 标志；“I need it by”提示可能晚到，并推荐英国仓的替代品。
-7. 搜索 `serum`、`coffee`、`yoga mat` → 每个都有 10 个以上结果；搜索 `sneakers`（美式说法）→ 找到 trainers；搜索 `ketle`（拼错）→ 自动纠正为 kettle。
-8. 点头像进入个人中心，查看订单、再次购买、退出登录。
-
-## 协作方式
+在仓库根目录执行：
 
 ```bash
-git clone <仓库地址> && cd <仓库目录>
-git checkout -b feature/你的功能名
-# 修改后
-git add . && git commit -m "说明改了什么"
-git push -u origin feature/你的功能名
-# 然后在 GitHub 上发 Pull Request
+python3 -m http.server 5175 --bind 127.0.0.1
 ```
+
+- 整合版（首页）：<http://127.0.0.1:5175/>
+- 原版：<http://127.0.0.1:5175/classic/>
+
+无依赖安装、无构建步骤。需通过 HTTP 打开 ES Modules，不能双击 HTML。也可运行 `npm start`。
+
+## 保留与新增
+
+保留 StarPick 原有 460 件模拟商品、8 类目、关键词联想/同义词/纠错搜索、图库及放大、评价与买家秀、尺码/空间核对、需要日期检查、模拟登录、历史订单推荐及最多 3 件 PK。
+
+新增 3 件 FamilyWise 空气炸锅（共 463 件），家庭人数/单件预算/偏好、可编辑的 1–5 年拥有成本、仓库与目的地选择、购物车数量/款式/尺码/库存校验、游客结算、订单及按仓库分包裹的物流模拟。订单记录价格快照；模拟物流阶段可推进、重置并在刷新后保留。比较限同类商品。
+
+首页额外货架、详情规格与评价、成本假设、模拟物流工具默认收起；通过卡片、展开控件和弹窗逐步展示。
+
+## 演示边界
+
+商品、评价、库存、运费、配送时效、功率和保养费均为示例。无真实支付、后台账户、库存扣减、物流 API、地图实时定位或跨设备同步。结算仅需演示姓名与城市，不收集银行卡或真实街道地址。原有已送达示例订单仍在模拟账户中；整合版新订单可从 Orders 查看与追踪。
+
+拥有成本 = 商品价 + 所选仓库单件运费 + 额定 kW × 每日小时 × 年天数 × 年数 × 电价 + 年保养预留 × 年数。仅为明确列出的电器计算，原目录变体继承基款假设，不把电池时长、插排额定容量或充电输出当耗电量。默认电价 £0.25/kWh 是示例，不代表当前供应商报价；全功率模型不模拟恒温器启停。可展开查看全部假设。
+
+运费按单件累加：同城英国仓 £1.99、其他英国仓 £3.49、中国仓 £5.99；无额外结算费用或免邮门槛。仓库库存为固定演示值，仅校验当前购物车的合计数量。地图瓦片需要网络，加载失败仍可使用仓库清单和物流文字。
+
+## 验证
+
+```bash
+node --test
+```
+
+8 项领域测试覆盖目录保留、TCO、错误功率防护、仓库报价、同类比较、购物车款式/库存、结算快照与多包裹阶段。浏览器另检查家庭偏好、仓库、数量和费用、游客结算、物流刷新保存、PK 成本交互、原搜索与评价、390px 手机布局。
+
+## 素材与来源
+
+- 基础代码与全部原目录数据：[ymg198/starpick-uk-prototype](https://github.com/ymg198/starpick-uk-prototype)。保留原作者工作与说明。
+- 空气炸锅为 FamilyWise 原创 SVG 示意图，不代表实拍。
+- 居家氛围照片：[Unsplash](https://images.unsplash.com/photo-1600210492486-724fe5c67fb0)，仅作为空间场景。
+- DM Sans / Manrope 字体本地存放，SIL Open Font License 保留在 `assets/fonts/`。
+- Leaflet 本地分发及许可证保留在 `vendor/leaflet/`；地图 © OpenStreetMap contributors。

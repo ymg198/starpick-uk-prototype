@@ -1,3 +1,7 @@
+import {mountCost} from '../cost.js';
+import {openWarehouses,warehouseSummary} from '../warehouse.js';
+import {warehouseFor,destination} from '../commerce.js';
+import {shipping,energySpec} from '../domain.js';
 // Product detail page: key facts (category-aware), delivery check, fit check, specs, reviews, PK entry points
 import { PRODUCTS } from '../../data/products.js';
 import { getReviews, starBreakdown } from '../reviews.js';
@@ -92,7 +96,7 @@ export function renderProduct(el, id) {
   const cat = getCategory(p.category);
   store.set('viewed', [p.id, ...store.get('viewed', []).filter((x) => x !== p.id)].slice(0, 8));
 
-  const reviews = getReviews(p);
+  const reviews = getReviews(p).map(r=>p.familywiseImage?{...r,photo:false}:r);
   const images = productImages(p);
   const photoReviews = reviews.filter((r) => r.photo);
   const allPhotos = photoReviews.flatMap((r) => buyerPhotos(p, r, photoCount(r)).map((src) => ({ src, r })))
@@ -110,7 +114,7 @@ export function renderProduct(el, id) {
     : sameSub.length ? sameSub.slice(0, 2)
     : similar.slice().sort((a, b) => shared(b) - shared(a) || Math.abs(a.price - p.price) - Math.abs(b.price - p.price)).slice(0, 2);
   const tagSet = [...new Set(reviews.flatMap((r) => r.tags))];
-  const win = deliveryWindow(p);
+  let win = deliveryWindow(p);
   const defaultNeedBy = new Date(); defaultNeedBy.setDate(defaultNeedBy.getDate() + 7);
   const showFit = p.dims && FIT_ROOM.includes(p.category);
   let unit = 'cm';
@@ -130,10 +134,10 @@ export function renderProduct(el, id) {
       <h1>${esc(p.name)}</h1>
       <button class="pd-rating link-btn" id="to-reviews">${stars(p.rating, 14)} <strong>${p.rating}</strong> <span class="muted">${fmtCount(p.reviews)} ratings · ${fmtCount(p.sold)} sold</span></button>
       <div class="pd-price"><span class="now">${money(p.price)}</span><s>${money(p.was)}</s><span class="off">−${pctOff(p)}%</span></div>
-      <p class="muted">Price includes VAT. Delivery ${p.warehouse === 'UK' ? 'free over £15' : '£1.99, free over £20'}.</p>
+      <p class="muted">Price includes VAT. Delivery quoted by selected warehouse.</p>
       ${p.colors.length > 1 ? `<p class="opt-label">Colour</p><div class="swatches" data-group="colour">${p.colors.map((c, i) => `<button class="swatch ${i === 0 ? 'on' : ''}">${esc(c)}</button>`).join('')}</div>` : ''}
       ${p.sizes ? `<p class="opt-label">Size <span class="muted">· ${esc(p.fit)}</span></p><div class="swatches" data-group="size">${p.sizes.map((s) => `<button class="swatch">${esc(s)}</button>`).join('')}</div>` : ''}
-      <p class="pd-desc">${esc(p.desc)}</p>
+      <p class="pd-desc">${esc(p.desc)}</p><button id="choose-warehouse" class="delivery-choice">${warehouseSummary(p)} <span>Change ↗</span></button>
       <div class="pd-actions">
         <button class="pill pill-blue" id="buy-now">Buy now</button>
         <button class="pill pill-grey" id="add-basket">Add to basket</button>
@@ -142,7 +146,7 @@ export function renderProduct(el, id) {
     </div>
   </section>
 
-  <section class="pd-panels">
+  <div id="product-cost"></div><details class="product-details"><summary>Before you buy <span>Delivery date, fit & key facts</span></summary><section class="pd-panels">
     <div class="card panel">
       <h3>Before you buy</h3>
       <ul class="facts">${keyFacts(p)}</ul>
@@ -151,7 +155,7 @@ export function renderProduct(el, id) {
     <div class="card panel">
       <h3>Delivery</h3>
       <p class="big">${deliveryText(p)}</p>
-      <p class="muted">${p.warehouse === 'UK' ? 'Ships from our UK warehouse · tracked by Evri' : 'Ships directly from China · tracked by Royal Mail on arrival'}</p>
+      <p class="muted" id="delivery-origin">${shipping(p,warehouseFor(p),destination()).warehouse.name} · simulated delivery window</p>
       <label class="field">I need it by
         <input type="date" id="need-by" value="${defaultNeedBy.toISOString().slice(0, 10)}">
       </label>
@@ -170,10 +174,10 @@ export function renderProduct(el, id) {
     </div>` : ''}
   </section>
 
-  <section class="card specs">
-    <h3>Specifications</h3>
+  </details><details class="card specs"><summary>Specifications</summary>
+
     <dl>${specRows(p, cat)}</dl>
-  </section>
+  </details>
 
   ${rivals.length ? `<section class="card pk-teaser">
     <div><h3>Not sure? PK it.</h3><p class="muted">Compare side by side with similar items.</p></div>
@@ -184,8 +188,7 @@ export function renderProduct(el, id) {
       </a>`).join('')}</div>
   </section>` : ''}
 
-  <section class="reviews-wrap" id="reviews">
-    <h2>Ratings & Reviews</h2>
+  <details class="reviews-wrap" id="reviews"><summary>Ratings & reviews <span>${p.rating} ★ · ${fmtCount(p.reviews)} sample ratings</span></summary>
     <div class="review-summary card">
       <div class="score"><span class="big-num">${p.rating}</span><span class="muted">out of 5</span></div>
       <div class="bars">${breakdown.map((v, i) => `<div class="bar-row"><span>${5 - i}★</span><div class="bar"><i style="width:${v}%"></i></div></div>`).join('')}
@@ -207,7 +210,7 @@ export function renderProduct(el, id) {
       ${tagSet.map((t) => `<button class="chip" data-f="tag:${esc(t)}">${esc(t)}</button>`).join('')}
     </div>
     <div class="review-list" id="review-list"></div>
-  </section>
+  </details>
 
   <section class="shelf">
     <div class="shelf-head"><h2>You might also like</h2></div>
@@ -232,15 +235,13 @@ export function renderProduct(el, id) {
   $$('.bs-photo', el).forEach((b) => (b.onclick = () => openLightbox(allPhotos.map((x) => x.src), +b.dataset.i, 'Customer photos')));
 
   // --- interactions ---
-  $('#to-reviews', el).onclick = () => $('#reviews', el).scrollIntoView({ behavior: 'smooth' });
-  $('#add-basket', el).onclick = () => addToBasket(p.id);
+  $('#to-reviews',el).onclick=()=>{const r=$('#reviews',el);r.open=true;r.scrollIntoView({behavior:'smooth'});};
+  const selection=()=>({size:$('[data-group="size"] .on',el)?.textContent||'',colour:$('[data-group="colour"] .on',el)?.textContent||''});
+  $('#add-basket',el).onclick=()=>addToBasket(p.id,selection());
   $('#add-pk', el).onclick = () => addToPK(p.id);
-  $('#buy-now', el).onclick = () => {
-    if (p.sizes && !$('[data-group="size"] .on', el)) return toast('Please choose a size first');
-    if (!currentUser()) { document.dispatchEvent(new CustomEvent('open-signin')); return toast('Sign in to place your order'); }
-    const order = placeOrder([p.id]);
-    toast(`Order ${order.id} placed — see Account`);
-  };
+  $('#buy-now',el).onclick=()=>{if(addToBasket(p.id,selection()))location.hash='#/checkout';};
+  mountCost($('#product-cost',el),[p]);
+  $('#choose-warehouse',el).onclick=()=>openWarehouses(p,()=>{win=deliveryWindow(p);$('#choose-warehouse',el).innerHTML=warehouseSummary(p)+' <span>Change ↗</span>';$('.panel .big',el).textContent=deliveryText(p);$('#delivery-origin',el).textContent=shipping(p,warehouseFor(p),destination()).warehouse.name+' · simulated delivery window';checkNeed();mountCost($('#product-cost',el),[p]);});
   $$('.swatches', el).forEach((group) => $$('.swatch', group).forEach((b) => (b.onclick = () => {
     $$('.swatch', group).forEach((x) => x.classList.remove('on'));
     b.classList.add('on');

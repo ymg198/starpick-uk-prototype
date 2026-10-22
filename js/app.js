@@ -1,3 +1,7 @@
+import {addItem,getCart} from './commerce.js';
+import {comparable} from './domain.js';
+import {initFamily} from './family.js';
+import {renderCart,renderCheckout,renderOrders,renderTracking} from './views/shopping.js';
 // App shell: hash router, header search with autocomplete, PK tray, basket counter.
 import { HOT_KEYWORDS } from '../data/products.js';
 import { suggest } from './search.js';
@@ -14,28 +18,27 @@ import { icon } from './utils.js';
 export function setPK(ids) { store.set('pk', ids); renderTray(); }
 export function addToPK(id) {
   const ids = store.get('pk', []);
+  if (ids.length && !comparable(getProduct(ids[0]),getProduct(id))) return toast('Choose products of the same type to compare');
   if (ids.includes(id)) return toast('Already in your PK list');
   if (ids.length >= 3) return toast('PK holds up to 3 items — remove one first');
   setPK([...ids, id]);
   toast(ids.length ? 'Added — open PK to compare' : 'Added to PK. Add another to compare');
 }
-export function addToBasket(id) {
-  const b = store.get('basket', []);
-  store.set('basket', [...b, id]);
-  updateBasket();
-  toast('Added to basket');
+export function addToBasket(id,options={}) {
+  const p=getProduct(id);if(!p)return false;
+  try{addItem(p,options);updateBasket();toast('Added to your basket');return true;}catch(e){toast(e.message);if(p.sizes&&!options.size)location.hash='#/product/'+id;return false;}
 }
 function updateBasket() {
-  const n = store.get('basket', []).length;
-  $('#basket-count').textContent = n;
-  $('#basket-count').hidden = !n;
+  const n=getCart().reduce((sum,l)=>sum+l.quantity,0);
+  $('#basket-count').textContent=n;$('#basket-count').hidden=!n;
 }
+document.addEventListener('cart-changed',updateBasket);
 
 // ---------- PK tray (floating bar at the bottom) ----------
 function renderTray() {
   const ids = store.get('pk', []);
   const tray = $('#pk-tray');
-  const onCompare = location.hash.startsWith('#/compare');
+  const onCompare = ['compare','cart','checkout','orders','tracking','account'].some(path=>location.hash.startsWith('#/'+path));
   $('#pk-count').textContent = ids.length;
   $('#pk-count').hidden = !ids.length;
   if (!ids.length || onCompare) { tray.classList.remove('show'); return; }
@@ -125,8 +128,8 @@ function openSignIn() {
     <button class="si-btn si-google" data-method="google"><span class="g-mark">G</span>Continue with Google</button>
     <div class="si-or"><span>or use email</span></div>
     <form id="si-form">
-      <input type="email" id="si-email" placeholder="Email" value="emma.wilson@example.co.uk" required>
-      <input type="password" id="si-pass" placeholder="Password" value="demo1234" required>
+      <label class="sr-only" for="si-email">Demo account email</label><input type="email" id="si-email" placeholder="Email" value="emma.wilson@example.co.uk" required>
+      <label class="sr-only" for="si-pass">Demo password</label><input type="password" id="si-pass" placeholder="Password" value="demo1234" required>
       <button class="pill pill-blue si-submit" type="submit">Sign in</button>
     </form>
     <p class="si-foot muted">New here? <button class="link-btn" data-method="register">Create an account</button></p>
@@ -175,6 +178,10 @@ function route() {
   else if (parts[0] === 'search') renderSearch(el, params);
   else if (parts[0] === 'product') renderProduct(el, parts[1]);
   else if (parts[0] === 'compare') renderCompare(el, params);
+  else if (parts[0] === 'cart') renderCart(el);
+  else if (parts[0] === 'checkout') renderCheckout(el);
+  else if (parts[0] === 'orders') renderOrders(el);
+  else if (parts[0] === 'tracking') renderTracking(el,parts[1],params);
   else if (parts[0] === 'account') renderAccount(el);
   else renderHome(el);
 
@@ -182,7 +189,9 @@ function route() {
   window.scrollTo(0, 0);
 }
 
+document.addEventListener('family-changed',route);
 window.addEventListener('hashchange', route);
+initFamily();
 initSearch();
 initAccount();
 updateBasket();

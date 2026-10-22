@@ -1,3 +1,6 @@
+import {mountCost} from '../cost.js';
+import {comparable,shipping} from '../domain.js';
+import {warehouseFor,destination} from '../commerce.js';
 // PK (head-to-head comparison) page — up to 3 products, winners highlighted per row
 import { PRODUCTS } from '../../data/products.js';
 import { $, $$, esc, money, pctOff, fmtCount, productArt, getProduct, dimsText, store, aspectLabels } from '../utils.js';
@@ -17,7 +20,7 @@ function rows(items) {
     { label: L.size, show: (p) => p.aspects.size + '%', score: (p) => p.aspects.size },
     { label: L.photo, show: (p) => p.aspects.photo + '%', score: (p) => p.aspects.photo },
     { label: L.quality, show: (p) => p.aspects.quality + '%', score: (p) => p.aspects.quality },
-    { group: 'Delivery & returns', label: 'Delivery', show: (p) => (p.warehouse === 'UK' ? '2–4 days · UK' : '7–14 days · China'), score: (p) => (p.warehouse === 'UK' ? 1 : 0) },
+    { group: 'Delivery & returns', label: 'Delivery', show:p=>{const q=shipping(p,warehouseFor(p),destination());return q.days.join('–')+' days · '+q.warehouse.name;}, score:p=>-shipping(p,warehouseFor(p),destination()).days[1] },
     { label: 'Returns', show: (p) => (p.returns.free ? `Free · ${p.returns.days} days` : `Paid · ${p.returns.days} days`), score: (p) => (p.returns.free ? 100 : 0) + p.returns.days },
     { group: 'Details', label: 'Fit', show: (p) => esc(p.fit || '—'), score: (p) => (p.fit ? (/true to size/i.test(p.fit) ? 1 : 0) : null), when: any((p) => p.fit) },
     { label: 'Sizes', show: (p) => (p.sizes ? `${p.sizes[0]} – ${p.sizes.at(-1)}` : '—'), score: () => null, when: any((p) => p.sizes) },
@@ -37,27 +40,29 @@ function verdicts(items) {
   return [
     ['Best price', best((p) => -p.price)],
     ['Best rated', best((p) => p.rating + p.aspects.photo / 1000)],
-    ['Fastest delivery', best((p) => (p.warehouse === 'UK' ? 1 : 0) + p.rating / 100)],
+    ['Fastest delivery', best(p=>-shipping(p,warehouseFor(p),destination()).days[1]+p.rating/100)],
     ['Fewest surprises', best((p) => surprises(p) + p.aspects.size / 1000)],
   ];
 }
 
 export function renderCompare(el, params) {
   let ids = (params.get('ids') || store.get('pk', []).join(',')).split(',').filter((id) => getProduct(id)).slice(0, 3);
+  ids=[...new Set(ids)];
+  const first=ids.length?getProduct(ids[0]):null;ids=ids.filter(id=>comparable(first,getProduct(id)));
   setPK(ids);
   const items = ids.map(getProduct);
 
   if (!items.length) {
     el.innerHTML = `<header class="page-head"><p class="eyebrow">PK</p><h1>Compare</h1></header>
       <div class="empty card"><h3>Nothing to compare yet</h3><p class="muted">Tap “+ PK compare” on any product, or try one of these:</p>
-      <div class="chips"><a class="chip" href="#/compare?ids=e4,e5">Headphones PK</a><a class="chip" href="#/compare?ids=k1,k2">Kettle PK</a><a class="chip" href="#/compare?ids=f3,f4,f2">Winter wear PK</a><a class="chip" href="#/compare?ids=l1,l2,l3">Lamp PK</a></div></div>`;
+      <div class="chips"><a class="chip" href="#/compare?ids=fw-air-sage,fw-air-cream,fw-air-dark">Air fryer costs</a><a class="chip" href="#/compare?ids=e4,e5">Headphones PK</a><a class="chip" href="#/compare?ids=k1,k2">Kettle PK</a><a class="chip" href="#/compare?ids=f2,f2v1">Winter wear PK</a><a class="chip" href="#/compare?ids=l1,l2,l3">Lamp PK</a></div></div>`;
     return;
   }
 
   const cat = items[0].category;
   const sub = items[0].sub;
   const rank = (p) => (p.sub === sub && p.category === cat ? 2 : p.category === cat ? 1 : 0);
-  const candidates = PRODUCTS.filter((p) => !ids.includes(p.id) && p.category === cat).sort((a, b) => rank(b) - rank(a) || b.sold - a.sold).slice(0, 40);
+  const candidates = PRODUCTS.filter((p) => !ids.includes(p.id) && p.category === cat && p.sub===sub).sort((a, b) => rank(b) - rank(a) || b.sold - a.sold).slice(0, 40);
   const cols = items.length + (items.length < 3 ? 1 : 0);
 
   el.innerHTML = `
@@ -67,7 +72,7 @@ export function renderCompare(el, params) {
   ${items.length > 1 ? `<div class="verdicts">${verdicts(items).map(([label, p]) => `
     <a class="verdict card" href="#/product/${p.id}">${productArt(p, 'mini')}<div><span class="eyebrow">${label}</span><strong>${esc(p.name)}</strong></div></a>`).join('')}</div>` : ''}
 
-  <div class="pk-table card" style="--cols:${cols}">
+  <div id="compare-cost"></div><div class="pk-scroll"><div class="pk-table card" style="--cols:${cols}">
     <div class="pk-row pk-head">
       <div class="pk-label"></div>
       ${items.map((p) => `<div class="pk-cell">
@@ -90,7 +95,8 @@ export function renderCompare(el, params) {
         ${items.length < 3 ? '<div class="pk-cell"></div>' : ''}
       </div>`;
     }).join('')}
-  </div>`;
+  </div></div>`;
+  mountCost($('#compare-cost',el),items);
 
   $$('.remove', el).forEach((b) => (b.onclick = () => {
     const next = ids.filter((x) => x !== b.dataset.id);

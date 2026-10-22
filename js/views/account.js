@@ -15,7 +15,7 @@ export function renderAccount(el) {
     $('#acc-signin', el).onclick = () => document.dispatchEvent(new CustomEvent('open-signin'));
     return;
   }
-  const spent = u.orders.reduce((s, o) => s + o.items.reduce((t, id) => t + (getProduct(id)?.price || 0), 0), 0);
+  const spent=u.orders.reduce((s,o)=>s+(o.total??o.items.reduce((t,id)=>t+(getProduct(id)?.price||0),0)),0);
 
   el.innerHTML = `
   <header class="page-head"><p class="eyebrow">Account</p><h1>Hi, ${esc(u.name.split(' ')[0])}</h1></header>
@@ -44,14 +44,14 @@ export function renderAccount(el) {
         <article class="order card">
           <div class="order-head">
             <div><strong>Order ${o.id}</strong><span class="muted"> · ${fmt(o.date)}</span></div>
-            <span class="status status-${STATUS[o.status] || 'blue'}">${o.status}</span>
+            <div>${o.lines?`<a class="link-btn" href="#/tracking/${o.id}">Track journey →</a>`:''} <span class="status status-${STATUS[o.status] || 'blue'}">${o.status}</span></div>
           </div>
           ${o.items.map(getProduct).filter(Boolean).map((p) => `
             <div class="order-item">
               <a href="#/product/${p.id}" class="order-prod">${productArt(p, 'mini')}<span>${esc(p.name)}<br><span class="muted">${money(p.price)}</span></span></a>
               <div class="order-actions">
                 <button class="pill pill-grey small" data-again="${p.id}">Buy again</button>
-                ${o.status === 'Delivered' ? `<button class="pill pill-grey small" data-review="${p.id}">Write a review</button>` : '<button class="pill pill-grey small" data-track>Track</button>'}
+                ${o.status === 'Delivered' ? `<button class="pill pill-grey small" data-review="${p.id}">Write a review</button>` : `<a class="pill pill-grey small" href="#/tracking/${o.id}">Track</a>`}
               </div>
             </div>`).join('')}
         </article>`).join('')}

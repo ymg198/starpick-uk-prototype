@@ -6,8 +6,8 @@ import { BLUEPRINTS } from '../data/variants.js';
 import { draw, makeCtx, hex, shade } from './art.js';
 import { PHOTO_MANIFEST } from '../../img/manifest.js';
 
-// Photos registered in the main site's img/manifest.js (shared by a base product and its similar listings).
-// Manifest paths are relative to the site root, so prefix them for pages served from familywise-edition/.
+// Photos registered in img/manifest.js (shared by a base product and its similar listings).
+// Manifest paths are relative to the site root, so prefix them for pages served from classic/.
 const ROOT = '../';
 const rooted = (list) => list?.map((src) => ROOT + src);
 const photosFor = (p) => PHOTO_MANIFEST[p.base || p.id];
@@ -254,7 +254,6 @@ const CUT = new Map();
 export function cutoutUri(p) {
   const real = realProductImages(p);
   if (real) return real[0];
-  if(p.familywiseImage)return p.images[0];
   if (!CUT.has(p.id)) {
     const ctx = makeCtx('k');
     const c = cat(p);

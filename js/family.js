@@ -16,5 +16,5 @@ export function openFamily(){
 }
 export function initFamily(){
   $('#family-open').onclick=openFamily;
-  $('#about-edition').onclick=()=>showDialog('Two projects, one thoughtful shop',`<p>StarPick’s catalogue, search, reviews and PK comparison meet FamilyWise’s calm design and household shopping tools.</p><div class="info-grid"><div><strong>Choose with confidence</strong><p>Compare purchase and estimated running costs.</p></div><div><strong>See the journey</strong><p>Choose a warehouse and follow each demo parcel.</p></div></div><p class="muted">Integrated V1.1 · All products, reviews, shipping quotes and orders are simulated. No payments are taken.</p><a class="pill pill-grey" href="../">View original StarPick ↗</a>`);
+  $('#about-edition').onclick=()=>showDialog('Two projects, one thoughtful shop',`<p>StarPick’s catalogue, search, reviews and PK comparison meet FamilyWise’s calm design and household shopping tools.</p><div class="info-grid"><div><strong>Choose with confidence</strong><p>Compare purchase and estimated running costs.</p></div><div><strong>See the journey</strong><p>Choose a warehouse and follow each demo parcel.</p></div></div><p class="muted">Integrated V1.1 · All products, reviews, shipping quotes and orders are simulated. No payments are taken.</p><a class="pill pill-grey" href="classic/">View original StarPick ↗</a>`);
 }
