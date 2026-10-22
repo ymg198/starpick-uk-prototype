@@ -9,7 +9,7 @@ export const COLOR_HEX = {
   Sage: '#a7bba0', Beige: '#d9c9ad', Cream: '#eee5d1', Brass: '#c9a14a', Silver: '#c9cdd3', 'Matte Black': '#2f3034',
   Graphite: '#4b4d54', 'Midnight Blue': '#22305a', Pink: '#f3a8be', 'Rose Gold': '#e3b3a1', Lilac: '#c4b2e2',
   Sky: '#8ccaee', Coral: '#f08d78', Blush: '#efc6c4', Clear: '#dbe7ee', RGB: '#7c6cf0', Granite: '#5a5c62',
-  Red: '#d8423c', Blue: '#3b6fd8', Green: '#4f9a5b', Brown: '#7a5233', Purple: '#8d6ad8', Yellow: '#f2c94c',
+  Oak: '#c49a6c', Burgundy: '#7a2638', Red: '#d8423c', Blue: '#3b6fd8', Green: '#4f9a5b', Brown: '#7a5233', Purple: '#8d6ad8', Yellow: '#f2c94c',
 };
 export const hex = (name, fallback = '#8e9eff') => COLOR_HEX[name] || (name && name.startsWith('#') ? name : fallback);
 
@@ -95,6 +95,52 @@ const D = {
     return `<path d="M140 70h120l8 40-10 220h-46l-12-180-12 180h-46l-10-220z" fill="${f}"/>
       <rect x="140" y="70" width="120" height="22" fill="${shade(c, -0.2)}"/>
       <path d="M200 120v30" stroke="${shade(c, 0.2)}" stroke-width="3"/>`;
+  },
+  dress(ctx, c) {
+    const f = body(ctx, c), dk = shade(c, -0.25);
+    return `<path d="M170 64h60l14 18 22 10-8 46-20-6 4 28-16 18 62 152c4 8-2 16-10 16H122c-8 0-14-8-10-16l62-152-16-18 4-28-20 6-8-46 22-10z" fill="${f}"/>
+      <path d="M170 64l30 70 30-70" fill="none" stroke="${dk}" stroke-width="4"/>
+      <path d="M150 178h100" stroke="${dk}" stroke-width="7" stroke-linecap="round"/>
+      <path d="M238 180c14 10 18 30 10 46" stroke="${dk}" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M200 184l-46 146M214 196l18 134" stroke="${shade(c, 0.25)}" stroke-width="2" opacity=".7"/>`;
+  },
+  knitdress(ctx, c) {
+    const f = body(ctx, c), dk = shade(c, -0.22);
+    let rib = '';
+    for (let x = 150; x <= 250; x += 10) rib += `<path d="M${x} 120L${x + (x - 200) * 0.25} 318" stroke="${dk}" stroke-width="2" opacity=".35"/>`;
+    return `<path d="M176 60h48v22l30 12 46 30c10 8 14 20 14 32l4 110c0 8-6 14-14 14h-12l-12-122 4 172c0 8-6 12-14 12H130c-8 0-14-4-14-12l4-172-12 122H96c-8 0-14-6-14-14l4-110c0-12 4-24 14-32l46-30 30-12z" fill="${f}"/>
+      ${rib}
+      <rect x="176" y="56" width="48" height="28" rx="6" fill="${dk}" opacity=".65"/>
+      <rect x="120" y="306" width="160" height="14" fill="${dk}" opacity=".5"/>`;
+  },
+  sidetable(ctx, c) {
+    const top = ctx.grad([[0, shade(c, 0.2)], [1, shade(c, -0.1)]]), leg = '#2f3034';
+    return `<path d="M150 170L118 330M250 170L282 330M200 176v154" stroke="${leg}" stroke-width="9" stroke-linecap="round"/>
+      <ellipse cx="200" cy="168" rx="118" ry="30" fill="${shade(c, -0.25)}"/>
+      <ellipse cx="200" cy="158" rx="118" ry="30" fill="${top}"/>
+      <path d="M120 156c30 10 70 14 110 10M140 146c30 8 70 10 110 6" stroke="${shade(c, -0.15)}" stroke-width="2" fill="none" opacity=".6"/>
+      <ellipse cx="200" cy="300" rx="60" ry="8" fill="none" stroke="${leg}" stroke-width="6"/>`;
+  },
+  armchair(ctx, c) {
+    const f = body(ctx, c), dk = shade(c, -0.25), lt = shade(c, 0.18);
+    return `<path d="M118 316l-10 20M282 316l10 20M150 320l-4 14M250 320l4 14" stroke="#8a5a34" stroke-width="9" stroke-linecap="round"/>
+      <path d="M126 90c0-20 16-30 36-30h76c20 0 36 10 36 30v130H126z" fill="${f}"/>
+      <path d="M150 100v100M200 96v104M250 100v100" stroke="${dk}" stroke-width="3" opacity=".45"/>
+      <rect x="96" y="160" width="52" height="150" rx="24" fill="${dk}"/>
+      <rect x="252" y="160" width="52" height="150" rx="24" fill="${dk}"/>
+      <path d="M130 228c0-14 10-22 24-22h92c14 0 24 8 24 22v26H130z" fill="${lt}"/>
+      <rect x="120" y="250" width="160" height="70" rx="14" fill="${f}"/>`;
+  },
+  bookshelf(ctx, c) {
+    const wood = ctx.grad([[0, shade(c, 0.15)], [1, shade(c, -0.15)]]), frame = '#2f3034';
+    const books = ['#c8553d', '#26345a', '#e0b04a', '#4f9a5b', '#8d6ad8', '#f4f4f2'];
+    let shelves = '';
+    [[120, 92], [168, 108], [216, 124], [264, 140], [312, 156]].forEach(([y, w], i) => {
+      shelves += `<rect x="${200 - w}" y="${y}" width="${w * 2}" height="10" rx="2" fill="${wood}"/>`;
+      if (i < 4) for (let k = 0; k < 3 + (i % 2); k++) shelves += `<rect x="${200 - w + 14 + k * 18}" y="${y - 34 + (k % 2) * 6}" width="14" height="${34 - (k % 2) * 6}" rx="2" fill="${books[(i * 3 + k) % books.length]}"/>`;
+      if (i === 1 || i === 3) shelves += `<path d="M${200 + w - 40} ${y}h26l-4-22h-18z" fill="#b5764a"/><circle cx="${200 + w - 27}" cy="${y - 30}" r="14" fill="#4f9a5b"/>`;
+    });
+    return `<path d="M150 70L100 330M250 70L300 330" stroke="${frame}" stroke-width="8" stroke-linecap="round"/>${shelves}`;
   },
   coffeebag(ctx, c) {
     const f = vbody(ctx, c);

@@ -34,14 +34,16 @@ const shortName = (p) => p.name.replace(/^(Kestrun|Norhaven|Sonaro|Aurevia|Maiso
 // One pick per slot, so the shelf mixes home, beauty, clothing, shoes, drinkware, food and more.
 // Each product appears once: similar listings of the same base product (f1, f1v1, f1v2 …) count as one.
 const GUESS_SLOTS = [
-  { id: 'home', match: (p) => p.category === 'home' },
+  { id: 'furniture', match: (p) => p.sub === 'Furniture' },
   { id: 'beauty', match: (p) => p.category === 'beauty' },
-  { id: 'clothing', match: (p) => p.category === 'fashion' && !['Shoes', 'Bags'].includes(p.sub) },
+  { id: 'dresses', match: (p) => p.sub === 'Dresses' },
   { id: 'shoes', match: (p) => p.sub === 'Shoes' },
   { id: 'drinkware', match: (p) => p.tags.some((t) => /bottle|flask|mug|cup/.test(t)) },
   { id: 'food', match: (p) => p.category === 'food' },
   { id: 'electronics', match: (p) => p.category === 'electronics' },
+  { id: 'home', match: (p) => p.category === 'home' && p.sub !== 'Furniture' },
   { id: 'kitchen', match: (p) => p.category === 'kitchen' },
+  { id: 'clothing', match: (p) => p.category === 'fashion' && !['Shoes', 'Bags', 'Dresses'].includes(p.sub) },
   { id: 'sports', match: (p) => p.category === 'sports' && !p.tags.some((t) => /bottle|flask/.test(t)) },
   { id: 'travel', match: (p) => p.category === 'travel' },
 ];
@@ -63,7 +65,7 @@ export function guessYouLike(user = currentUser(), limit = 10) {
       s += p.tags.filter((t) => q.tags.includes(t)).length * 1.5;
       if (s > bestScore) { bestScore = s; best = q; }
     }
-    const reason = boughtBases.has(baseOf(p)) ? `Like your ${shortName(best)}` : bestScore >= 2 ? `You bought ${shortName(best)}` : p.official ? 'Big brand' : pctOff(p) >= 40 ? 'Great value' : 'Top rated';
+    const reason = boughtBases.has(baseOf(p)) ? `Like your ${shortName(best)}` : bestScore >= 4 ? `You bought ${shortName(best)}` : p.official ? 'Big brand' : pctOff(p) >= 40 ? 'Great value' : 'Top rated';
     return { p, score: value(p) + bestScore, reason };
   }).sort((a, b) => b.score - a.score);
 
@@ -133,7 +135,7 @@ export function renderHome(el) {
     <p class="muted moment-sub" id="moment-sub"></p>
     <div class="shelf-row" id="moment-row"></div>
   </section>
-  <div class="section-kicker"><h2>Find your everyday</h2><a class="link-btn" href="#/search">All 413 products ↗</a></div>
+  <div class="section-kicker"><h2>Find your everyday</h2><a class="link-btn" href="#/search">All ${PRODUCTS.length} products ↗</a></div>
   <section class="cat-grid">
     ${CATEGORIES.map(c=>`<a class="cat-tile card" href="#/search?cat=${c.id}"><span class="cat-icon" style="background:linear-gradient(135deg, ${c.colors[0]}, ${c.colors[1]})">${categoryIcon(c)}</span><span>${c.name}</span></a>`).join('')}
   </section>
@@ -203,8 +205,11 @@ export function renderHome(el) {
   // ---- carousel behaviour: arrows, dots, swipe (scroll-snap), autoplay ----
   const track = $('#carousel', el);
   const dots = $$('#dots button', el);
-  const go = (i) => track.scrollTo({ left: track.children[(i + picks.length) % picks.length].offsetLeft - track.offsetLeft, behavior: 'smooth' });
-  const current = () => Math.round(track.scrollLeft / track.clientWidth);
+  const go = (i) => {
+    const slide = track.children[(((i % picks.length) + picks.length) % picks.length)];
+    if (slide) track.scrollTo({ left: slide.offsetLeft - track.offsetLeft, behavior: 'smooth' });
+  };
+  const current = () => (track.clientWidth ? Math.round(track.scrollLeft / track.clientWidth) : 0); // 0 width when the tab is hidden
   $('#prev', el).onclick = () => go(current() - 1);
   $('#next', el).onclick = () => go(current() + 1);
   dots.forEach((d) => (d.onclick = () => go(+d.dataset.i)));

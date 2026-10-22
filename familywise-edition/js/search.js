@@ -10,7 +10,10 @@ const SYNONYMS = {
   organizer: 'organiser', organisers: 'organiser', cookware: 'pan', pans: 'pan',
   towel: 'towels', kettles: 'kettle', lamps: 'lamp', boxes: 'box',
   xmas: 'christmas', fairy: 'strip',
+  // furniture
+  chairs: 'chair', sofa: 'armchair', bookcase: 'bookshelf', bookcases: 'bookshelf', shelves: 'shelving', tables: 'table',
   // fashion (US → UK)
+  dresses: 'dress', frock: 'dress', gown: 'dress',
   sneakers: 'trainers', sneaker: 'trainers', shoes: 'trainers', sweater: 'jumper', pullover: 'jumper',
   puffer: 'down', parka: 'jacket', coats: 'coat', jackets: 'jacket', tshirt: 'tee', tees: 'tee', purse: 'bag', handbag: 'bag',
   // food
